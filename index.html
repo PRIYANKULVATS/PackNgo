@@ -5,1756 +5,938 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PackNgo — Travel Reimagined</title>
   <meta name="description" content="PackNgo — AI-powered travel platform: flights + hotels, tours, AR/VR reviews, safety & more." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap"></script>
+  <!-- Leaflet fallback (used when Google Maps API key is missing or blocked) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <style>
-    :root {
-      --bg: #0a0a0f;
-      --card: #111118;
-      --card2: #16161f;
-      --accent: #1e90ff;
-      --accent2: #00d4ff;
-      --gold: #f0b429;
-      --soft: #8899bb;
-      --text: #e2e8f0;
-      --border: rgba(30,144,255,0.12);
-      --glass: rgba(255,255,255,0.03);
-      font-family: 'DM Sans', sans-serif;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-weight: 300;
-      letter-spacing: 0.3px;
-      overflow-x: hidden;
-      opacity: 1;
-    }
-    a { color: inherit; text-decoration: none; }
-    img { max-width: 100%; display: block; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
-
-    /* ── LOADING SCREEN ── */
-    #loadingScreen {
-      position: fixed; inset: 0;
-      background: linear-gradient(135deg, #0a0a0f 0%, #0f0f1a 100%);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 9999;
-      transition: opacity 0.6s ease, visibility 0.6s ease;
-    }
-    #loadingScreen.hide { opacity: 0; visibility: hidden; pointer-events: none; }
-    .load-bag {
-      animation: bagBounce 1.4s ease-in-out infinite;
-      margin-bottom: 24px;
-    }
-    @keyframes bagBounce {
-      0%,100% { transform: translateY(0); }
-      40% { transform: translateY(-18px); }
-      60% { transform: translateY(-8px); }
-    }
-    .load-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 48px;
-      font-weight: 700;
-      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--gold));
-      background-size: 200%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: shimmerText 2s ease-in-out infinite;
-      margin-bottom: 8px;
-    }
-    .load-sub { color: rgba(255,255,255,0.5); font-size: 15px; margin-bottom: 28px; }
-    .load-bar-wrap { width: 180px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
-    .load-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); animation: loadFill 2.8s ease-in-out forwards; }
-    @keyframes loadFill { 0%{width:0%} 100%{width:100%} }
-    @keyframes shimmerText {
-      0%,100%{background-position:0%} 50%{background-position:100%}
-    }
-
-    /* ── HEADER ── */
-    header {
-      position: fixed; left: 0; right: 0; top: 0;
-      backdrop-filter: blur(12px);
-      background: rgba(10,10,15,0.92);
-      border-bottom: 1px solid var(--border);
-      z-index: 60;
-      transition: background 0.3s;
-    }
-    .nav {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 32px;
-    }
-    .logo {
-      display: flex; gap: 10px; align-items: center;
-      font-family: 'Playfair Display', serif;
-    }
-    .logo-mark {
-      width: 40px; height: 40px; border-radius: 10px;
-      background: var(--accent);
-      display: grid; place-items: center;
-      box-shadow: 0 4px 16px rgba(30,144,255,0.3);
-    }
-    .logo-name { font-size: 20px; font-weight: 700; }
-    .logo-name span { color: var(--accent); }
-    .logo-sub { font-size: 10px; color: var(--soft); margin-top: 1px; font-family: 'DM Sans', sans-serif; font-weight: 300; }
-    nav ul { display: flex; gap: 4px; list-style: none; align-items: center; }
-    nav li a {
-      display: block; padding: 7px 12px; border-radius: 8px;
-      font-size: 13px; color: var(--soft);
-      transition: color 0.2s, background 0.2s;
-    }
-    nav li a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-    .nav-cta {
-      background: var(--accent); color: #fff !important;
-      padding: 8px 16px !important; border-radius: 8px;
-      font-weight: 500 !important;
-      box-shadow: 0 4px 16px rgba(30,144,255,0.25);
-      transition: transform 0.2s, box-shadow 0.2s !important;
-    }
-    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(30,144,255,0.35) !important; background: var(--accent) !important; }
-    #navToggle {
-      display: none; background: transparent;
-      border: 1px solid var(--border); padding: 8px 10px;
-      border-radius: 8px; color: var(--soft); cursor: pointer; font-size: 16px;
-    }
-    @media(max-width:900px){
-      #navToggle { display: inline-flex; }
-      nav ul { display: none; flex-direction: column; position: absolute; top: 60px; right: 20px;
-        background: #16161f; border: 1px solid var(--border); border-radius: 12px; padding: 10px; gap: 2px; min-width: 180px; }
-      nav ul.open { display: flex; }
-    }
-
-    /* ── HERO ── */
-    .hero {
-      min-height: 96vh;
-      display: grid;
-      grid-template-columns: 1fr 460px;
-      gap: 32px;
-      align-items: center;
-      padding-top: 80px;
-    }
-    .hero-left { padding: 48px 0 48px 0; }
-    .eyebrow {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(30,144,255,0.1);
-      border: 1px solid rgba(30,144,255,0.2);
-      padding: 5px 12px; border-radius: 999px;
-      font-size: 12px; color: var(--accent); font-weight: 500;
-      margin-bottom: 20px;
-    }
-    .eyebrow::before { content: '●'; font-size: 8px; animation: blink 1.5s ease-in-out infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 50px; line-height: 1.1;
-      color: #fff; font-weight: 400;
-      margin-bottom: 20px;
-      animation: fadeUp 1s ease both 0.2s;
-    }
-    h1 em { font-style: italic; color: var(--accent); }
-    .lead {
-      color: var(--soft); font-size: 15px; line-height: 1.7;
-      margin-bottom: 28px; max-width: 500px;
-    }
-    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 10px 18px; border-radius: 10px;
-      border: 1px solid var(--border); cursor: pointer;
-      background: transparent; color: var(--text);
-      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
-      letter-spacing: 0.3px;
-      transition: all 0.25s ease;
-    }
-    .btn:hover { border-color: rgba(30,144,255,0.4); background: rgba(30,144,255,0.07); transform: translateY(-1px); }
-    .btn:active { transform: scale(0.98); }
-    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 4px 20px rgba(30,144,255,0.3); }
-    .btn.primary:hover { background: #2a9fff; box-shadow: 0 8px 28px rgba(30,144,255,0.4); }
-
-    /* cost compare widget */
-    .glass-card {
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: 14px; padding: 16px;
-    }
-    .input {
-      width: 100%; padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04);
-      color: var(--text); font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      transition: border 0.2s, box-shadow 0.2s;
-    }
-    .input:focus { outline: none; border-color: rgba(30,144,255,0.4); box-shadow: 0 0 0 3px rgba(30,144,255,0.1); }
-    .input-row { display: flex; gap: 8px; margin-top: 10px; }
-
-    /* mini widgets */
-    .widgets-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-    .widget {
-      background: var(--glass); border: 1px solid var(--border);
-      border-radius: 12px; padding: 14px; cursor: pointer;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-    .widget:hover { border-color: rgba(30,144,255,0.3); transform: translateY(-2px); }
-    .widget-label { font-size: 11px; color: var(--soft); margin-bottom: 3px; }
-    .widget-val { font-size: 15px; font-weight: 600; }
-
-    /* live stats */
-    .stats-row { display: flex; gap: 24px; margin-top: 14px; padding: 14px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; }
-    .stat-item { text-align: center; }
-    .stat-num { font-size: 22px; font-weight: 700; }
-    .stat-lbl { font-size: 10px; color: var(--soft); margin-top: 2px; }
-
-    /* hero right */
-    .hero-right { display: flex; flex-direction: column; gap: 14px; padding: 20px 0; }
-    .showcase {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px; padding: 18px;
-      animation: float 6s ease-in-out infinite;
-    }
-    .showcase:nth-child(2) { animation-delay: -3s; }
-    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-    .show-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-    .show-tile {
-      background: var(--card2); border-radius: 10px; padding: 12px;
-      border: 1px solid rgba(255,255,255,0.04);
-    }
-    .show-tile-label { font-size: 11px; color: var(--soft); margin-bottom: 4px; }
-    .show-tile-val { font-size: 13px; font-weight: 500; }
-    .tiny { font-size: 12px; color: var(--soft); }
-
-    /* ── SECTIONS ── */
-    section { padding: 64px 0; }
-    h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: 36px; font-weight: 400; color: #fff;
-      margin-bottom: 24px; letter-spacing: 0.3px;
-    }
-
-    /* cards grid */
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 16px; }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px; padding: 18px;
-      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-    }
-    .card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.4); border-color: rgba(30,144,255,0.25); }
-    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
-
-    /* feature list */
-    .feature-list { display: grid; gap: 12px; }
-    .feature-item {
-      display: flex; gap: 14px; align-items: flex-start;
-      padding: 16px; background: var(--card);
-      border: 1px solid var(--border); border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .feature-item:hover { border-color: rgba(30,144,255,0.3); background: var(--card2); }
-    .feature-item.expanded { border-color: rgba(30,144,255,0.4); }
-    .feat-icon {
-      width: 48px; height: 48px; border-radius: 12px;
-      background: linear-gradient(135deg, #0d2a3f, #0a1e30);
-      display: grid; place-items: center; font-size: 22px; flex-shrink: 0;
-    }
-    .service-details { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, margin 0.3s; }
-    .service-details.show { max-height: 160px; margin-top: 10px; }
-    .service-btn {
-      display: inline-block; padding: 5px 10px;
-      background: rgba(30,144,255,0.1); border: 1px solid rgba(30,144,255,0.2);
-      color: var(--accent); border-radius: 6px;
-      font-size: 11px; font-family: 'DM Sans', sans-serif;
-      margin-right: 6px; margin-top: 8px; cursor: pointer;
-      transition: background 0.2s;
-    }
-    .service-btn:hover { background: rgba(30,144,255,0.2); }
-
-    /* services layout */
-    .services-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
-
-    /* advanced features */
-    .adv-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 20px; }
-    .adv-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px; padding: 22px;
-      transition: transform 0.3s ease, border-color 0.3s;
-    }
-    .adv-card:hover { transform: translateY(-4px); border-color: rgba(30,144,255,0.3); }
-    .adv-icon {
-      width: 46px; height: 46px; border-radius: 12px;
-      display: grid; place-items: center; margin-bottom: 14px;
-    }
-    .adv-title { font-size: 16px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
-    .adv-sub { font-size: 12px; color: var(--soft); margin-bottom: 16px; }
-
-    /* progress bars */
-    .bar-wrap { width: 100%; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; margin: 8px 0 14px; }
-    .bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
-
-    /* VR scene */
-    #vrScene {
-      width: 100%; height: 110px; border-radius: 8px;
-      background: url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&q=80') center/cover;
-      animation: panoramaMove 20s linear infinite;
-      position: relative; overflow: hidden; margin-bottom: 12px;
-    }
-    @keyframes panoramaMove { 0%{background-position:0% 50%} 100%{background-position:100% 50%} }
-    .vr-badge {
-      position: absolute; top: 8px; left: 8px;
-      background: rgba(0,0,0,0.7); padding: 3px 8px; border-radius: 4px;
-      font-size: 11px; color: #fff;
-    }
-    .ar-badge {
-      position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.7); padding: 3px 8px; border-radius: 4px;
-      font-size: 11px; color: #fff;
-    }
-
-    /* social feed */
-    .social-item { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
-    .avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 700; flex-shrink: 0;
-    }
-
-    /* booking section */
-    #book .cards { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-
-    /* reviews */
-    .reviews-wrap { display: flex; gap: 14px; overflow: hidden; }
-    .review-card { min-width: 300px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; font-style: italic; }
-
-    /* vlogs */
-    .vlog-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 12px; margin-top: 14px; }
-    .vlog-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; transition: transform 0.2s; }
-    .vlog-card:hover { transform: translateY(-3px); }
-
-    /* map */
-    #map { height: 380px; width: 100%; border-radius: 14px; border: 1px solid var(--border); display: none; }
-    #map-loading { text-align: center; color: var(--soft); padding: 48px; }
-
-    /* contact */
-    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    textarea.input { height: 110px; resize: vertical; margin-top: 8px; }
-
-    /* footer */
-    footer {
-      padding: 32px 0; margin-top: 32px;
-      border-top: 1px solid var(--border);
-    }
-    .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-
-    /* ── MODALS ── */
-    .modal {
-      position: fixed; inset: 0;
-      display: grid; place-items: center;
-      background: rgba(5,5,10,0.85);
-      backdrop-filter: blur(6px);
-      z-index: 120; opacity: 0; pointer-events: none;
-      transition: opacity 0.25s;
-    }
-    .modal.open { opacity: 1; pointer-events: auto; }
-    .modal-card {
-      width: 420px; max-width: 94%;
-      background: #13131c;
-      border: 1px solid var(--border);
-      border-radius: 16px; padding: 0;
-      overflow: hidden;
-      animation: modalPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
-    }
-    @keyframes modalPop { from{transform:scale(0.88) translateY(20px);opacity:0} to{transform:none;opacity:1} }
-    .modal-head {
-      padding: 16px 20px;
-      background: linear-gradient(90deg, var(--accent), #0a5fa0);
-      color: #fff; font-weight: 600; font-size: 15px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .modal-close { background: none; border: none; color: rgba(255,255,255,0.8); cursor: pointer; font-size: 18px; }
-    .modal-close:hover { color: #fff; }
-    .modal-body { padding: 20px; }
-
-    /* login modal specific */
-    .login-avatar {
-      width: 56px; height: 56px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), #0a3f6a);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 26px; margin: 0 auto 16px;
-      box-shadow: 0 8px 24px rgba(30,144,255,0.2);
-    }
-    .login-form { display: flex; flex-direction: column; gap: 12px; }
-    .login-actions { display: flex; gap: 10px; margin-top: 6px; }
-    .login-footer { text-align: center; color: var(--soft); font-size: 12px; margin-top: 14px; }
-    .login-footer a { color: var(--accent); }
-    .social-btns { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
-    .social-btn {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
-      display: grid; place-items: center; cursor: pointer;
-      transition: background 0.2s, transform 0.2s;
-    }
-    .social-btn:hover { background: rgba(255,255,255,0.12); transform: scale(1.1); }
-    .social-btn img { width: 18px; height: 18px; object-fit: contain; }
-
-    /* toast */
-    #toast {
-      position: fixed; right: 20px; bottom: 20px;
-      background: linear-gradient(90deg, #1a2a3a, #0d1f30);
-      border: 1px solid rgba(30,144,255,0.3);
-      color: var(--text); padding: 12px 18px;
-      border-radius: 10px; font-size: 13px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-      opacity: 0; transform: translateY(10px);
-      transition: opacity 0.25s, transform 0.25s;
-      z-index: 500; max-width: 340px;
-    }
-    #toast.show { opacity: 1; transform: none; }
-
-    /* chat widget */
-    #chatToggle {
-      position: fixed; bottom: 20px; right: 20px;
-      width: 56px; height: 56px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), #0a5fa0);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; cursor: pointer; z-index: 400;
-      box-shadow: 0 4px 20px rgba(30,144,255,0.35);
-      border: none;
-      animation: chatBounce 2.5s ease-in-out infinite;
-      transition: transform 0.2s;
-    }
-    #chatToggle:hover { animation: none; transform: scale(1.12) rotate(8deg); }
-    @keyframes chatBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-    #chatWindow {
-      display: none; position: fixed; bottom: 88px; right: 20px;
-      width: 340px; height: 480px;
-      background: #13131c; border: 1px solid var(--border);
-      border-radius: 14px; overflow: hidden;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.6);
-      z-index: 399;
-      animation: slideUp 0.3s ease both;
-    }
-    @keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:none;opacity:1} }
-    #chatMessages {
-      padding: 14px; height: 370px; overflow-y: auto;
-      background: #0d0d14;
-      display: flex; flex-direction: column; gap: 8px;
-    }
-    #chatMessages::-webkit-scrollbar { width: 4px; }
-    #chatMessages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-    .chat-bubble {
-      padding: 9px 13px; border-radius: 10px;
-      font-size: 13px; line-height: 1.5; max-width: 85%;
-    }
-    .chat-bubble.user { background: var(--accent); color: #fff; align-self: flex-end; border-radius: 10px 10px 2px 10px; }
-    .chat-bubble.bot { background: var(--card2); color: var(--text); align-self: flex-start; border-radius: 10px 10px 10px 2px; }
-    .chat-input-row { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--border); }
-
-    /* back to top */
-    #backTop {
-      position: fixed; bottom: 88px; right: 88px;
-      width: 44px; height: 44px; border-radius: 50%;
-      background: var(--card); border: 1px solid var(--border);
-      color: var(--soft); font-size: 18px;
-      display: grid; place-items: center; cursor: pointer;
-      opacity: 0; transition: opacity 0.3s, transform 0.2s;
-      z-index: 100;
-    }
-    #backTop.visible { opacity: 1; }
-    #backTop:hover { transform: translateY(-2px); color: var(--accent); }
-
-    /* notification badge */
-    .notif-badge {
-      display: none; background: #ff4757; color: #fff;
-      border-radius: 50%; padding: 1px 5px;
-      font-size: 10px; margin-left: 3px;
-    }
-
-    /* itinerary day */
-    .itin-day {
-      padding: 12px; margin: 8px 0;
-      border-left: 3px solid var(--accent);
-      background: var(--card2); border-radius: 0 8px 8px 0;
-    }
-    .itin-day-num { font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 3px; }
-
-    /* buddy card */
-    .buddy-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 16px; text-align: center;
-      cursor: pointer; transition: all 0.3s ease;
-    }
-    .buddy-card:hover { transform: translateY(-4px); border-color: rgba(30,144,255,0.3); }
-
-    /* group card */
-    .group-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 16px;
-      transition: all 0.3s ease;
-    }
-    .group-card:hover { transform: translateY(-3px); border-color: rgba(30,144,255,0.3); }
-
-    /* animations */
-    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-
-    /* scroll reveal */
-    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
-    .reveal.visible { opacity: 1; transform: none; }
-
-    /* responsive */
-    @media(max-width:900px){
-      .hero { grid-template-columns: 1fr; padding-top: 80px; }
-      .hero-right { display: none; }
-      h1 { font-size: 36px; }
-      .services-layout { grid-template-columns: 1fr; }
-      .contact-grid { grid-template-columns: 1fr; }
-    }
-    @media(max-width:600px){
-      .container { padding: 0 16px; }
-      .nav { padding: 12px 16px; }
-      h2 { font-size: 28px; }
-      .widgets-row { grid-template-columns: 1fr; }
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-
-<!-- ── LOADING SCREEN ── -->
-<div id="loadingScreen">
-  <div class="load-bag">
-    <svg width="72" height="72" viewBox="0 0 24 24" fill="none">
-      <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M9 6h6M3 10v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10M3 10h18M3 10l2-6h14l2 6" stroke="#1e90ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M8 14v4M12 14v4M16 14v4" stroke="#1e90ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </div>
-  <div class="load-title">PackNgo</div>
-  <div class="load-sub">Travel Reimagined</div>
-  <div class="load-bar-wrap"><div class="load-bar"></div></div>
-</div>
-
-<!-- ── HEADER ── -->
-<header>
-  <div class="nav">
-    <div class="logo">
-      <div class="logo-mark">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M3 12h18M12 3v18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+<!-- Loading Screen -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-content">
+      <div class="traveling-bag">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M9 6h6M9 6v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V6" stroke="var(--luxury-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 10v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10M3 10h18M3 10l2-6h14l2 6" stroke="var(--luxury-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 14v4M12 14v4M16 14v4" stroke="var(--luxury-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <div>
-        <div class="logo-name">Pack<span>Ngo</span></div>
-        <div class="logo-sub">Travel reimagined</div>
-      </div>
-    </div>
-    <button id="navToggle" aria-controls="mainNav" aria-expanded="false">☰</button>
-    <nav>
-      <ul id="mainNav">
-        <li><a href="#home">Home</a></li>
-        <li><a href="#about">About</a></li>
-        <li><a href="#services">Services</a></li>
-        <li><a href="#advanced-features">AI Features</a></li>
-        <li><a href="#pages">Pages</a></li>
-        <li><a href="#contact">Contact</a></li>
-        <li><a href="#book" class="nav-cta">Book a Rental</a></li>
-        <li>
-          <button onclick="toggleNotifications()" style="background:none;border:none;color:var(--soft);font-size:16px;cursor:pointer;padding:7px 10px;border-radius:8px;transition:color 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--soft)'">
-            🔔<span id="notificationBadge" class="notif-badge">3</span>
-          </button>
-        </li>
-        <li><a href="#" id="openLoginBtn">Login</a></li>
-      </ul>
-    </nav>
-  </div>
-</header>
-
-<!-- ── MAIN ── -->
-<main class="container" id="home">
-
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-left">
-      <div class="eyebrow">AI-powered • AR/VR • Safety-first</div>
-      <h1 id="heroTitle">PackNgo — Plan <em>smarter</em>, travel bolder</h1>
-      <p class="lead">From flight + hotel combos to AR/VR reviews, real-time safety tracking and a social travel buddy — PackNgo brings everything into one powerful platform.</p>
-
-      <div class="hero-actions">
-        <button class="btn primary" onclick="scrollToBook()">✈ Start Booking</button>
-        <button class="btn" onclick="openItineraryBuilder()">🗺 Build Itinerary</button>
-        <button class="btn" id="openAgentBtn">🤖 AI Travel Agent</button>
-      </div>
-
-      <!-- Cost Compare -->
-      <div class="glass-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div>
-            <div class="tiny">Live cost comparison</div>
-            <div style="font-weight:600;margin-top:2px">Best route: <span id="bestRoute">Delhi → Goa</span></div>
-          </div>
-          <div style="text-align:right">
-            <div class="tiny">Estimated</div>
-            <div style="font-size:18px;font-weight:700;color:var(--accent)" id="estCost">₹5,199</div>
-          </div>
-        </div>
-        <div class="input-row">
-          <input class="input" id="cmpFrom" list="cityList" placeholder="From (city)" />
-          <input class="input" id="cmpTo" list="cityList" placeholder="To (city)" />
-          <button class="btn" onclick="compareCost()" style="white-space:nowrap">Compare</button>
-        </div>
-        <datalist id="cityList">
-          <option>Delhi</option><option>Mumbai</option><option>Bangalore</option>
-          <option>Goa</option><option>Manali</option><option>Kerala</option>
-          <option>Jaipur</option><option>Hyderabad</option><option>Kolkata</option><option>Pune</option>
-        </datalist>
-      </div>
-
-      <!-- Mini Widgets -->
-      <div class="widgets-row">
-        <div class="widget" onclick="toggleWeather()">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:20px">🌤️</span>
-            <div>
-              <div class="widget-label">Weather</div>
-              <div class="widget-val" id="weatherCity">Delhi</div>
-            </div>
-          </div>
-          <div style="margin-top:8px;text-align:right;font-size:20px;font-weight:700;color:var(--accent)" id="weatherTemp">28°C</div>
-        </div>
-        <div class="widget" onclick="toggleCurrency()">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:20px">💱</span>
-            <div>
-              <div class="widget-label">Currency</div>
-              <div class="widget-val">USD → INR</div>
-            </div>
-          </div>
-          <div style="margin-top:8px;text-align:right;font-size:13px;color:var(--soft)" id="currencyRate">1 USD = 83.5 INR</div>
-        </div>
-      </div>
-
-      <!-- Live Stats -->
-      <div class="stats-row">
-        <div class="stat-item">
-          <div class="stat-num" style="color:var(--accent)" id="visitorCount">1,247</div>
-          <div class="stat-lbl">Active Users</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" style="color:#00d4ff" id="bookingCount">89</div>
-          <div class="stat-lbl">Bookings Today</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" style="color:#ff6b6b" id="flightCount">156</div>
-          <div class="stat-lbl">Flights Tracked</div>
-        </div>
-        <div class="stat-item" style="margin-left:auto">
-          <div class="tiny" style="color:var(--accent)">● Live</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="hero-right">
-      <div class="showcase">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div>
-            <div style="font-weight:600">Flight + Hotel</div>
-            <div class="tiny">Smart combos, flexible dates</div>
-          </div>
-          <div class="tiny">SafeScore: <strong style="color:var(--accent)">8.6</strong></div>
-        </div>
-        <div class="show-grid">
-          <div class="show-tile"><div class="show-tile-label">Next promo</div><div class="show-tile-val">Summer Saver — 30% off</div></div>
-          <div class="show-tile"><div class="show-tile-label">Top package</div><div class="show-tile-val">Himalayan Serenity 5D</div></div>
-          <div class="show-tile"><div class="show-tile-label">Vlogs</div><div class="show-tile-val">City Street Foods · 12</div></div>
-          <div class="show-tile"><div class="show-tile-label">Cost compare</div><div class="show-tile-val">Multi-Carrier AI</div></div>
-        </div>
-      </div>
-
-      <div class="showcase" style="animation-delay:-3s">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div><strong>Quick Explore</strong><div class="tiny">Popular this week</div></div>
-          <div class="tiny">Reviews</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="show-tile show-tile-val" style="font-size:12px">🏖 Goa: Beaches</div>
-          <div class="show-tile show-tile-val" style="font-size:12px">🏔 Manali: Trails</div>
-          <div class="show-tile show-tile-val" style="font-size:12px">🏰 Rajasthan: Heritage</div>
-          <div class="show-tile show-tile-val" style="font-size:12px">🛶 Kerala: Backwaters</div>
-        </div>
+      <div class="loading-text">PackNgo</div>
+      <div class="loading-subtitle">Travel Reimagined</div>
+      <div class="loading-progress">
+        <div class="progress-bar"></div>
       </div>
     </div>
   </div>
 
-  <!-- ABOUT -->
-  <section id="about">
-    <h2 class="reveal">About PackNgo</h2>
-    <div class="cards">
-      <div class="card reveal" onclick="toggleAboutDetail(0)" style="cursor:pointer">
-        <h3>About PackNgo 🚀</h3>
-        <p class="tiny" style="line-height:1.6">PackNgo is an integrated travel ecosystem — booking engine, AR/VR reviews, AI personal travel agent, real-time safety & crowd tracking and a social hub for solo travellers.</p>
-        <div class="service-details" id="about-expand-0">
-          <p class="tiny" style="margin:8px 0;line-height:1.6">Founded in 2024, we're on a mission to revolutionize travel with cutting-edge AI and community-driven insights.</p>
-          <button class="service-btn" onclick="event.stopPropagation();showToast('Connecting with team...')">Meet Team</button>
-          <button class="service-btn" onclick="event.stopPropagation();showToast('Opening careers page...')">Join Mission</button>
+  <header>
+    <div class="container nav">
+      <div class="logo">
+        <div class="mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12h18M12 3v18" stroke="#021" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div>
+          <div style="font-size:18px">Pack<span style="color:var(--accent)">Ngo</span></div>
+          <div style="font-size:11px;color:var(--soft);margin-top:2px">Travel reimagined</div>
         </div>
       </div>
-      <div class="card reveal" onclick="toggleAboutDetail(1)" style="cursor:pointer">
-        <h3>Vision & Mission 🎯</h3>
-        <p class="tiny" style="line-height:1.6">To make travel safer, more personal and smarter using ML, AR and community-driven features.</p>
-        <div class="service-details" id="about-expand-1">
-          <p class="tiny" style="margin:8px 0;line-height:1.6"><strong>Our Promise:</strong> Every traveler deserves a confident, safe, and personalized journey.</p>
-          <button class="service-btn" onclick="event.stopPropagation();showToast('Showing our values...')">Our Values</button>
-          <button class="service-btn" onclick="event.stopPropagation();showToast('Loading 2025 roadmap...')">Roadmap 2025</button>
-        </div>
-      </div>
-      <div class="card reveal" onclick="toggleAboutDetail(2)" style="cursor:pointer">
-        <h3>What We Provide 💎</h3>
-        <ul style="margin-top:8px;line-height:2;color:var(--soft);font-size:13px">
-          <li>✅ AI powered personal travel agent</li>
-          <li>✅ Real time crowd & safety tracking</li>
-          <li>✅ AR + VR Travel Review</li>
-          <li>✅ Travel Buddy social network</li>
+      <button id="navToggle" aria-controls="mainNav" aria-expanded="false">☰</button>
+      <nav>
+        <ul id="mainNav">
+          <li><a href="#home">Home</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#services">Services</a></li>
+          <li><a href="#advanced-features">AI Features</a></li>
+          <li><a href="#pages">Pages</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="#book" class="cta">Book a Rental</a></li>
+          <li><button id="notificationBtn" onclick="toggleNotifications()" style="background:none;border:none;color:#ccc;font-size:18px;cursor:pointer;margin-right:8px">🔔<span id="notificationBadge" style="display:none;background:#ff4757;color:white;border-radius:50%;padding:2px 6px;font-size:10px;margin-left:4px">3</span></button></li>
+          <li><a href="#" id="openLogin">Login</a></li>
         </ul>
-        <div class="service-details" id="about-expand-2">
-          <ul style="margin:8px 0;color:var(--soft);font-size:13px;line-height:2">
-            <li>✅ Smart Local Translator guide</li>
-            <li>✅ Group Travel Suggestions</li>
-            <li>✅ Travel Insurance & Emergency mode</li>
+      </nav>
+    </div>
+  </header>
+
+  
+  <main class="container" id="home">
+    <div class="hero">
+      <div class="hero-left">
+        <span class="eyebrow">AI-powered • AR/VR • Safety-first</span>
+        <h1 id="hero-title" class="fade-up"></h1>
+        <p class="lead">From flight + hotel combos to AR/VR reviews, safety tracking and a social travel buddy — PackNgo brings everything into one mind-blowing platform.</p>
+
+        <div class="hero-actions">
+          <button class="btn primary" onclick="scrollToBook(); demoStartBooking()">Start Booking</button>
+          <button class="btn" onclick="openItineraryBuilder()">Build Itinerary</button>
+          <button class="btn" id="openAgent">Try AI Travel Agent</button>
+        </div>
+
+        <div style="margin-top:20px" class="glass-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:10px;color:var(--soft)">Live cost comparison</div>
+              <div style="font-weight:400;font-size:18px">Best route: <span id="bestRoute">Delhi → Goa</span></div>
+            </div>
+            <div style="text-align:right;font-size:12px;color:var(--soft)">Estimated: <strong id="estCost">₹5,199</strong></div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+            <input class="input" id="cmpFrom" list="cityList" placeholder="From (city)" />
+            <input class="input" id="cmpTo" list="cityList" placeholder="To (city)" />
+            <button class="btn" onclick="compareCost()">Compare</button>
+          </div>
+          <datalist id="cityList">
+            <option>Delhi</option>
+            <option>Mumbai</option>
+            <option>Bangalore</option>
+            <option>Goa</option>
+            <option>Manali</option>
+            <option>Kerala</option>
+            <option>Jaipur</option>
+            <option>Hyderabad</option>
+            <option>Kolkata</option>
+            <option>Pune</option>
+          </datalist>
+        </div>
+
+        <!-- Interactive Widgets -->
+        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="glass-card interactive-widget" onclick="toggleWeather()">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:20px">🌤️</span>
+              <div>
+                <div style="font-size:12px;color:var(--soft)">Weather</div>
+                <div style="font-weight:600" id="weatherCity">Delhi</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;text-align:right">
+              <span style="font-size:18px;font-weight:700" id="weatherTemp">28°C</span>
+            </div>
+          </div>
+          
+          <div class="glass-card interactive-widget" onclick="toggleCurrency()">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:20px">💱</span>
+              <div>
+                <div style="font-size:12px;color:var(--soft)">Currency</div>
+                <div style="font-weight:600">USD → INR</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;text-align:right">
+              <span style="font-size:14px" id="currencyRate">1 USD = 83.5 INR</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Stats -->
+        <div style="margin-top:12px" class="glass-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:700;color:var(--accent)" id="visitorCount">1,247</div>
+                <div style="font-size:10px;color:var(--soft)">Active Users</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:700;color:#00d4ff" id="bookingCount">89</div>
+                <div style="font-size:10px;color:var(--soft)">Bookings Today</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:700;color:#ff6b6b" id="flightCount">156</div>
+                <div style="font-size:10px;color:var(--soft)">Flights Tracked</div>
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--soft)">Live Stats</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="hero-right">
+        <div class="showcase float glass-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div><strong>Flight + Hotel</strong><div class="tiny">Smart combos, flexible dates</div></div>
+            <div class="tiny">SafeScore: <strong id="safeScore">8.6</strong></div>
+          </div>
+          <div class="show-grid">
+            <div class="card">
+              <div style="font-size:13px;color:var(--soft)">Next promo</div>
+              <div style="font-weight:700;margin-top:6px">Summer Saver — Up to 30% off</div>
+            </div>
+            <div class="card">
+              <div style="font-size:13px;color:var(--soft)">Top package</div>
+              <div style="font-weight:700;margin-top:6px">Himalayan Serenity — 5 days</div>
+            </div>
+            <div class="card">
+              <div style="font-size:13px;color:var(--soft)">Vlogs</div>
+              <div style="font-weight:700;margin-top:6px">City Street Foods — 12 videos</div>
+            </div>
+            <div class="card">
+              <div style="font-size:13px;color:var(--soft)">Cost comparison</div>
+              <div style="font-weight:700;margin-top:6px">Multi-Carrier analysis</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="showcase glass-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><strong>Quick Explore</strong><div class="tiny">Popular this week</div></div>
+            <div class="tiny">Reviews</div>
+          </div>
+          <div style="margin-top:10px" class="cards">
+            <div class="card">Goa: Beaches & Nightlife</div>
+            <div class="card">Manali: Adventure Trails</div>
+            <div class="card">Rajasthan: Heritage Loop</div>
+            <div class="card">Kerala: Backwaters</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+    <section id="about" class="bg-section" style="padding:40px 0;margin:20px 0">
+      <h2 style="cursor:pointer;transition:200ms" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='inherit'" onclick="toggleAboutExpand()">About PackNgo</h2>
+      <div class="cards" style="margin-top:12px">
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="toggleAboutDetail(0)">
+          <h3>About PackNgo 🚀</h3>
+          <p class="tiny" style="margin-top:8px">PackNgo is an integrated travel ecosystem — booking engine, AR/VR reviews, AI personal travel agent, real-time safety & crowd tracking and a social hub for solo travellers.</p>
+          <div id="about-expand-0" class="service-details" style="margin-top:0">
+            <p class="tiny" style="margin:8px 0">Founded in 2024, we're on a mission to revolutionize travel with cutting-edge AI and community-driven insights. Our team spans engineers, travel experts, and safety specialists.</p>
+            <button class="service-btn" onclick="demoTeamConnect()">Meet Team</button>
+            <button class="service-btn" onclick="demoJoinMission()">Join Mission</button>
+          </div>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="toggleAboutDetail(1)">
+          <h3>Vision & Mission 🎯</h3>
+          <p class="tiny" style="margin-top:8px">To make travel safer, more personal and smarter using ML, AR and community-driven features.</p>
+          <div id="about-expand-1" class="service-details" style="margin-top:0">
+            <p class="tiny" style="margin:8px 0"><strong>Our Promise:</strong> Every traveler deserves a confident, safe, and personalized journey. We empower you with AI insights, real-time safety data, and a global community.</p>
+            <button class="service-btn" onclick="demoMissionValues()">Our Values</button>
+            <button class="service-btn" onclick="demoRoadmap()">Roadmap 2025</button>
+          </div>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="toggleAboutDetail(2)">
+          <h3>What We Provide 💎</h3>
+          <ul style="margin-top:8px;line-height:1.8;color:var(--soft)">
+            <li>✅ AI powered personal travel agent</li>
+            <li>✅ Real time crowd & safety tracking</li>
+            <li>✅ AR + VR Travel Review</li>
+            <li>✅ A Travel Buddy (solo traveler social network)</li>
           </ul>
+          <div id="about-expand-2" class="service-details" style="margin-top:0">
+            <ul style="margin:8px 0;color:var(--soft)">
+              <li>✅ Smart Local Translator guide</li>
+              <li>✅ Group Travel Suggestions</li>
+              <li>✅ Travel Insurance & Emergency mode</li>
+            </ul>
+            <button class="service-btn" onclick="demoFeatureDemo()">Feature Demo</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+    <section id="services" class="bg-section" style="padding:40px 0;margin:20px 0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:22px">
+        <div style="flex:1">
+          <h2>Services</h2>
+          <p class="tiny">Full-stack travel services combining booking, safety, AR/VR reviews and a community for travellers.</p>
+
+          <div style="margin-top:16px" class="feature-list">
+            <div class="feature-item card service-card" id="svc-flights" onclick="toggleService('svc-flights','flights')">
+              <div class="icon">✈️</div>
+              <div style="flex:1">
+                <strong>Flight + Hotel Booking</strong>
+                <div class="tiny">Smart combos, fare predictions, multi-city routing</div>
+                <div class="service-details" id="details-flights">
+                  <p class="tiny" style="margin:8px 0">Compare 100+ carriers and hotels instantly. Get AI-powered fare predictions and multi-city route optimization.</p>
+                  <button class="service-btn" onclick="demoFlightBooking()">Demo Booking</button>
+                  <button class="service-btn" onclick="demoPriceDrop()">Price Alert</button>
+                </div>
+              </div>
+            </div>
+            <div class="feature-item card service-card" id="svc-tours" onclick="toggleService('svc-tours','tours')">
+              <div class="icon">🧭</div>
+              <div style="flex:1">
+                <strong>Tour Packages</strong>
+                <div class="tiny">Curated packages — solo, family, adventure</div>
+                <div class="service-details" id="details-tours">
+                  <p class="tiny" style="margin:8px 0">Handpicked tour packages with verified guides. Solo, family, adventure, and luxury options available.</p>
+                  <button class="service-btn" onclick="demoTourFilter()">Filter Tours</button>
+                  <button class="service-btn" onclick="demoGuideConnect()">Connect Guide</button>
+                </div>
+              </div>
+            </div>
+            <!-- Maps service feature removed -->
+            <div class="feature-item card service-card" id="svc-compare" onclick="toggleService('svc-compare','compare')">
+              <div class="icon">🔍</div>
+              <div style="flex:1">
+                <strong>Cost Comparison</strong>
+                <div class="tiny">AI compares carriers, hotels, and rental fees</div>
+                <div class="service-details" id="details-compare">
+                  <p class="tiny" style="margin:8px 0">AI analyzes 1000+ options across all categories. Find hidden deals and save up to 40%.</p>
+                  <button class="service-btn" onclick="demoCompareNow()">Compare Now</button>
+                  <button class="service-btn" onclick="demoBestDeal()">Best Deals</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="width:380px">
+          <div class="card">
+            <h3>AR/VR Travel Reviews</h3>
+            <p class="tiny">Watch 360 reviews from travellers, preview hotels with AR, and experience tours before you go.</p>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn" onclick="demoARPreview()">Open 360 Demo</button>
+              <button class="btn" onclick="demoVlogExplore()">Explore Vlogs</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <h3>Travel Buddy</h3>
+            <p class="tiny">Find co-travelers, join micro-groups, or post a solo trip plan and get buddy requests.</p>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn" onclick="demoBuddyConnect()">Find Buddies</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Advanced Features Section -->
+    <section id="advanced-features" class="bg-section" style="padding:40px 0;margin:20px 0">
+      <h2 style="cursor:pointer;transition:200ms;text-align:center;margin-bottom:40px" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='inherit'">Advanced Travel Intelligence</h2>
+      <div class="cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px">
+
+        <!-- Real-time Crowd & Safety Tracking -->
+        <div class="card interactive-card" style="background:linear-gradient(180deg,var(--card),rgba(26,26,26,0.8));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--luxury-emerald),var(--luxury-gold));display:flex;align-items:center;justify-content:center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#012"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="color:var(--accent);margin:0;font-size:18px">Safety & Crowd Tracker</h3>
+              <div style="color:var(--soft);font-size:12px">Real-time destination intelligence</div>
+            </div>
+          </div>
+          <div id="safetyTracker" style="margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span style="color:var(--soft);font-size:14px">Current Safety Rating</span>
+              <span id="safetyRating" style="color:var(--luxury-emerald);font-weight:600">98%</span>
+            </div>
+            <div style="width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;margin-bottom:12px">
+              <div id="safetyBar" style="width:98%;height:100%;background:linear-gradient(90deg,var(--luxury-emerald),var(--luxury-gold));border-radius:3px;transition:width 0.5s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span style="color:var(--soft);font-size:14px">Crowd Level</span>
+              <span id="crowdLevel" style="color:var(--luxury-gold);font-weight:600">Low</span>
+            </div>
+            <div style="width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px">
+              <div id="crowdBar" style="width:25%;height:100%;background:linear-gradient(90deg,var(--luxury-gold),var(--luxury-purple));border-radius:3px;transition:width 0.5s"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <button class="btn" onclick="toggleSafetyAlerts(this)" style="flex:1;background:linear-gradient(90deg,var(--luxury-emerald),var(--luxury-gold));color:#012">Enable Alerts</button>
+
+          </div>
+        </div>
+
+        <!-- AR&VR Travel Preview -->
+        <div class="card interactive-card" style="background:linear-gradient(180deg,var(--card),rgba(26,26,26,0.8));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--luxury-purple),var(--luxury-emerald));display:flex;align-items:center;justify-content:center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#012"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="color:var(--accent);margin:0;font-size:18px">AR/VR Preview</h3>
+              <div style="color:var(--soft);font-size:12px">Immersive destination experience</div>
+            </div>
+          </div>
+          <div id="arvrPreview" style="margin-bottom:16px">
+            <div style="width:100%;height:120px;background:linear-gradient(135deg,var(--luxury-purple),var(--luxury-emerald));border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;position:relative;overflow:hidden">
+              <div id="vrScene" style="width:100%;height:100%;background-image:url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80');background-size:cover;background-position:center;animation:panorama 20s linear infinite"></div>
+              <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;color:white;font-size:11px">360° View</div>
+              <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;color:white;font-size:11px">AR Available</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="startVRPreview(this)" style="flex:1;background:linear-gradient(90deg,var(--luxury-purple),var(--luxury-emerald));color:#012">Start VR Tour</button>
+              <button class="btn" onclick="toggleARMode(this)" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2)">AR Mode</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Solo Travel Social Network -->
+        <div class="card interactive-card" style="background:linear-gradient(180deg,var(--card),rgba(26,26,26,0.8));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--luxury-gold),var(--luxury-purple));display:flex;align-items:center;justify-content:center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.75 1.75 0 0 0 18.3 7.5H15c-.55 0-1 .45-1 1V19c0 .55.45 1 1 1h3c.55 0 1-.45 1-1zM8 12c.83 0 1.5-.67 1.5-1.5S8.83 9 8 9s-1.5.67-1.5 1.5S7.17 12 8 12zm2.5-6.5c0-.83-.67-1.5-1.5-1.5S7.5 4.67 7.5 5.5 8.17 7 9 7s1.5-.67 1.5-1.5zM5 7c-1.11 0-2 .89-2 2v5.5H.5V17c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-2.5H7V9c0-1.11-.89-2-2-2z" fill="#012"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="color:var(--accent);margin:0;font-size:18px">Solo Traveler Network</h3>
+              <div style="color:var(--soft);font-size:12px">Connect with fellow adventurers</div>
+            </div>
+          </div>
+          <div id="socialNetwork" style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--luxury-emerald),var(--luxury-gold));display:flex;align-items:center;justify-content:center;font-size:14px;color:#012">A</div>
+              <div style="flex:1">
+                <div style="color:white;font-size:14px;font-weight:500">Alex joined Tokyo group</div>
+                <div style="color:var(--soft);font-size:12px">2 hours ago</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--luxury-purple),var(--luxury-emerald));display:flex;align-items:center;justify-content:center;font-size:14px;color:#012">S</div>
+              <div style="flex:1">
+                <div style="color:white;font-size:14px;font-weight:500">Sarah posted in Bali</div>
+                <div style="color:var(--soft);font-size:12px">5 hours ago</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px">
+              <button class="btn" onclick="findTravelBuddies()" style="flex:1;background:linear-gradient(90deg,var(--luxury-gold),var(--luxury-purple));color:#012">Find Buddies</button>
+              <button class="btn" onclick="joinCommunity()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2)">Join Groups</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart Translation -->
+        <div class="card interactive-card" style="background:linear-gradient(180deg,var(--card),rgba(26,26,26,0.8));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--luxury-emerald),var(--luxury-purple));display:flex;align-items:center;justify-content:center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" fill="#012"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="color:var(--accent);margin:0;font-size:18px">Smart Translation</h3>
+              <div style="color:var(--soft);font-size:12px">Real-time language assistance</div>
+            </div>
+          </div>
+          <div id="translationTool" style="margin-bottom:16px">
+            <div style="margin-bottom:12px">
+              <select id="sourceLang" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.2);padding:8px;border-radius:6px;color:inherit;margin-bottom:8px">
+                <option value="en" style="background:var(--card);color:white">English</option>
+                <option value="es" style="background:var(--card);color:white">Spanish</option>
+                <option value="fr" style="background:var(--card);color:white">French</option>
+                <option value="ja" style="background:var(--card);color:white">Japanese</option>
+                <option value="zh" style="background:var(--card);color:white">Chinese</option>
+              </select>
+              <textarea id="translateInput" placeholder="Enter text to translate..." style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.2);padding:8px;border-radius:6px;color:inherit;min-height:60px;resize:vertical" oninput="liveTranslate()"></textarea>
+            </div>
+            <div style="margin-bottom:12px">
+              <select id="targetLang" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.2);padding:8px;border-radius:6px;color:inherit;margin-bottom:8px">
+                <option value="es" style="background:var(--card);color:white">Spanish</option>
+                <option value="fr" style="background:var(--card);color:white">French</option>
+                <option value="ja" style="background:var(--card);color:white">Japanese</option>
+                <option value="zh" style="background:var(--card);color:white">Chinese</option>
+                <option value="en" style="background:var(--card);color:white">English</option>
+              </select>
+              <div id="translateOutput" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);padding:8px;border-radius:6px;color:var(--soft);min-height:60px;font-style:italic">Translation will appear here...</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="speakTranslation()" style="flex:1;background:linear-gradient(90deg,var(--luxury-emerald),var(--luxury-purple));color:#012">Speak</button>
+              <button class="btn" onclick="savePhrase()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2)">Save</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    
+    <section id="pages" class="bg-section" style="padding:40px 0;margin:20px 0">
+      <h2 style="cursor:pointer;transition:200ms" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='inherit'">Pages & Tools</h2>
+      <div class="cards" style="margin-top:12px">
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="demoPageFlights()">
+          <strong>✈️ Flight + Hotel</strong>
+          <p class="tiny">Full booking engine with fare prediction & multi-carrier search.</p>
+          <button class="service-btn" style="margin-top:8px" onclick="demoPageFlights()">Explore</button>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="demoPageTours()">
+          <strong>🎯 Tour Marketplace</strong>
+          <p class="tiny">Travel agents list packages — filter by ratings, safety score, price.</p>
+          <button class="service-btn" style="margin-top:8px" onclick="demoPageTours()">Explore</button>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="demoPageReviews()">
+          <strong>⭐ Customer Reviews</strong>
+          <p class="tiny">Verified reviews, AR snippets and verified traveller tags.</p>
+          <button class="service-btn" style="margin-top:8px" onclick="demoPageReviews()">Explore</button>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="demoPageVlogs()">
+          <strong>🎬 Travel Vlogs</strong>
+          <p class="tiny">Creator-driven video feed and editor for travel creators.</p>
+          <button class="service-btn" style="margin-top:8px" onclick="demoPageVlogs()">Explore</button>
+        </div>
+      </div>
+    </section>
+
+    
+    <section id="book">
+      <h2>Book a Rental</h2>
+      <div class="cards" style="margin-top:12px">
+        <div class="card">
+          <h3>Car / Bike Rental</h3>
+          <p class="tiny">Choose vehicle, dates, add insurance and emergency mode.</p>
+          <div style="margin-top:10px">
+            <label class="tiny">Pickup city</label>
+            <input id="rentCity" class="input" placeholder="e.g., Mumbai" />
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <input id="rentFrom" type="date" class="input" />
+              <input id="rentTo" type="date" class="input" />
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button class="btn" onclick="bookRental()">Reserve</button>
+              <button class="btn" onclick="estimateRental()">Estimate Cost</button>
+            </div>
+            <div style="margin-top:10px;color:var(--soft)" id="rentalEst"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Group Packages</h3>
+          <p class="tiny">Family / Friends packages with dynamic cost splitting.</p>
+          <div style="margin-top:10px">
+            <input id="groupSize" class="input" placeholder="Group size" type="number" />
+            <button class="btn" style="margin-top:8px" onclick="estimateGroup()">Estimate Split</button>
+            <div id="groupResult" style="margin-top:8px;color:var(--soft)"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reviews">
+      <h2>Customer Reviews</h2>
+      <div class="reviews" id="reviewsHolder">
+        <div class="review card">“Amazing AR preview — saved us hours.” — Tara</div>
+        <div class="review card">“AI agent found a cheaper multi-city route.” — Raj</div>
+        <div class="review card">“Travel Buddy helped me find a tour mate!” — Sneha</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+        <button class="btn" id="revPrev">◀ Prev</button>
+        <button class="btn" id="revNext">Next ▶</button>
+        <div style="margin-left:auto;color:var(--soft);font-size:13px" id="revCounter">1 / 3</div>
+      </div>
+    </section>
+
+    
+    <section id="vlogs">
+      <h2>Travel Vlogs</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px">
+        <div class="card"><strong>City Street Foods</strong><div class="tiny">10m • Delhi</div></div>
+        <div class="card"><strong>Roadtrip Kerala</strong><div class="tiny">8m • Kerala</div></div>
+        <div class="card"><strong>Himalayan Trails</strong><div class="tiny">14m • Manali</div></div>
+      </div>
+    </section>
+
+    <!-- Map exploration section removed as per request -->
+
+    
+    <section id="contact" class="bg-section" style="padding:40px 0;margin:40px 0">
+      <h2 style="cursor:pointer;transition:200ms" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='inherit'">Contact Us</h2>
+      <div class="cards" style="margin-top:12px">
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+          <h3>💬 Get in touch</h3>
+          <input class="input" id="cName" placeholder="Your name" />
+          <input class="input" id="cEmail" placeholder="Email" style="margin-top:8px" />
+          <textarea class="input" id="cMsg" placeholder="Message" style="margin-top:8px;height:120px"></textarea>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button class="btn" onclick="sendContact()" style="flex:1">Send</button>
+            <button class="btn" onclick="demoContactQuick()" style="flex:1">Quick Help</button>
+          </div>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+          <h3>📍 Our Offices</h3>
+          <div class="tiny" style="margin-bottom:12px">Available in major Indian cities</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <button class="service-btn" onclick="demoOfficeCall('Mumbai')" style="width:100%">📞 Mumbai</button>
+            <button class="service-btn" onclick="demoOfficeCall('Bangalore')" style="width:100%">📞 Bangalore</button>
+            <button class="service-btn" onclick="demoOfficeCall('Delhi')" style="width:100%">📞 Delhi</button>
+            <button class="service-btn" onclick="demoOfficeChat()" style="width:100%">💬 Live Chat</button>
+          </div>
+          <!-- office location map removed -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Google Maps Section -->
+    <section id="map-section" style="padding:72px 0">
+      <div class="container">
+        <h2 style="text-align:center;margin-bottom:24px">Explore Destinations</h2>
+        <div style="margin-bottom:20px;text-align:center">
+          <input id="map-search" type="text" placeholder="Search for places..." style="padding:10px;border:1px solid var(--accent);border-radius:8px;width:300px;max-width:90%;background:#1a1a1a;color:white">
+          <button onclick="searchPlace()" style="padding:10px 15px;background:var(--accent);border:none;border-radius:8px;color:#0f0f0f;margin-left:10px;cursor:pointer">Search</button>
+        </div>
+        <div id="map-loading" style="text-align:center;color:var(--soft);padding:40px;display:block">Loading map...</div>
+        <div id="map" style="height:400px;width:100%;border-radius:12px;border:1px solid rgba(30,144,255,0.1);display:none"></div>
+      </div>
+    </section>
+
+    
+    <footer>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-weight:700">Pack<span style="color:var(--accent)">Ngo</span></div>
+        <div style="color:var(--soft)">© PackNgo 2025 • Built with ❤️</div>
+        <div style="display:flex;gap:8px"><a href="#">Privacy</a><a href="#">Terms</a></div>
+      </div>
+    </footer>
+  </main>
+
+  
+  <div class="modal" id="modalLogin" aria-hidden="true">
+    <div class="modal-card">
+      <div class="login-3d-header">
+        <span>🔒 Login to PackNgo</span>
+      </div>
+      <div class="login-3d-avatar">👤</div>
+      <form class="login-3d-form" autocomplete="off" onsubmit="event.preventDefault(); login3D();">
+        <input class="input" id="loginEmail" placeholder="Email" type="email" autocomplete="username" required />
+        <input class="input" id="loginPass" placeholder="Password" type="password" autocomplete="current-password" required />
+      </form>
+      <div class="login-3d-actions">
+        <button class="btn" onclick="login3D()">Login</button>
+        <button class="btn" onclick="closeLogin()">Close</button>
+      </div>
+      <div class="login-3d-social">
+        <button title="Google" onclick="loginSocial('Google')">
+          <img class="login-logo" src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_2013_Google.png" alt="Google" />
+        </button>
+        <button title="Facebook" onclick="loginSocial('Facebook')">
+          <img class="login-logo" src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook" />
+        </button>
+        <button title="Apple" onclick="loginSocial('Apple')">
+          <img class="login-logo" src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple" />
+        </button>
+      </div>
+      <div class="login-3d-footer">No account? <a href="#" style="color:var(--accent)" onclick="openSignupModal();return false;">Sign up</a> | <a href="#" style="color:var(--accent)" onclick="openForgotModal();return false;">Forgot password?</a></div>
+    </div>
+  </div>
+
+  <!-- 3D Sign Up Modal -->
+  <div class="modal" id="modalSignup" aria-hidden="true">
+    <div class="modal-card">
+      <div class="login-3d-header">
+        <span>📝 Sign Up for PackNgo</span>
+      </div>
+      <div class="login-3d-avatar">🆕</div>
+      <form class="login-3d-form" autocomplete="off" onsubmit="event.preventDefault(); signup3D();">
+        <input class="input" id="signupName" placeholder="Name" type="text" required />
+        <input class="input" id="signupEmail" placeholder="Email" type="email" required />
+        <input class="input" id="signupPass" placeholder="Password" type="password" required />
+      </form>
+      <div class="login-3d-actions">
+        <button class="btn" onclick="signup3D()">Sign Up</button>
+        <button class="btn" onclick="closeSignupModal()">Close</button>
+      </div>
+      <div class="login-3d-footer">Already have an account? <a href="#" style="color:var(--accent)" onclick="openLogin();closeSignupModal();return false;">Login</a></div>
+    </div>
+  </div>
+
+  <!-- 3D Forgot Password Modal -->
+  <div class="modal" id="modalForgot" aria-hidden="true">
+    <div class="modal-card">
+      <div class="login-3d-header">
+        <span>🔑 Forgot Password</span>
+      </div>
+      <div class="login-3d-avatar">❓</div>
+      <form class="login-3d-form" autocomplete="off" onsubmit="event.preventDefault(); forgot3D();">
+        <input class="input" id="forgotEmail" placeholder="Enter your email" type="email" required />
+      </form>
+      <div class="login-3d-actions">
+        <button class="btn" onclick="forgot3D()">Reset Password</button>
+        <button class="btn" onclick="closeForgotModal()">Close</button>
+      </div>
+      <div class="login-3d-footer">Back to <a href="#" style="color:var(--accent)" onclick="openLogin();closeForgotModal();return false;">Login</a></div>
+    </div>
+  </div>
+
+  
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- location detail modal removed -->
+
+  <!-- Travel Vlogs Modal -->
+  <div class="modal" id="vlogsModal" aria-hidden="true">
+    <div class="modal-card" style="width:700px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(90deg,var(--accent),var(--luxury-purple));color:#012;font-weight:600">
+        <span>🎬 Travel Vlogs</span>
+        <button onclick="closeVlogsModal()" style="background:transparent;border:none;color:#012;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px;max-height:500px;overflow-y:auto">
+        <p style="color:var(--soft);margin-bottom:16px">Explore creator-driven travel stories and videos. Click on a vlog to watch or interact.</p>
+        <div id="vlogsList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px">
+          <!-- Vlogs will be populated here -->
         </div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- SERVICES -->
-  <section id="services">
-    <div class="services-layout">
-      <div>
-        <h2 class="reveal">Services</h2>
-        <p class="tiny reveal" style="margin-bottom:18px">Full-stack travel services combining booking, safety, AR/VR reviews and community.</p>
-        <div class="feature-list">
-          <div class="feature-item reveal" id="svc-flights" onclick="toggleService('svc-flights','flights')">
-            <div class="feat-icon">✈️</div>
-            <div style="flex:1">
-              <strong>Flight + Hotel Booking</strong>
-              <div class="tiny">Smart combos, fare predictions, multi-city routing</div>
-              <div class="service-details" id="details-flights">
-                <p class="tiny" style="margin:8px 0;line-height:1.6">Compare 100+ carriers and hotels instantly. AI-powered fare predictions and route optimization.</p>
-                <button class="service-btn" onclick="event.stopPropagation();showToast('Demo booking started...')">Demo Booking</button>
-                <button class="service-btn" onclick="event.stopPropagation();showToast('Price alert set!')">Price Alert</button>
-              </div>
-            </div>
-          </div>
-          <div class="feature-item reveal" id="svc-tours" onclick="toggleService('svc-tours','tours')">
-            <div class="feat-icon">🧭</div>
-            <div style="flex:1">
-              <strong>Tour Packages</strong>
-              <div class="tiny">Curated packages — solo, family, adventure</div>
-              <div class="service-details" id="details-tours">
-                <p class="tiny" style="margin:8px 0;line-height:1.6">Handpicked tour packages with verified guides. Solo, family, adventure, and luxury options.</p>
-                <button class="service-btn" onclick="event.stopPropagation();showToast('Filtering tours...')">Filter Tours</button>
-                <button class="service-btn" onclick="event.stopPropagation();showToast('Connecting with guide...')">Connect Guide</button>
-              </div>
-            </div>
-          </div>
-          <div class="feature-item reveal" id="svc-compare" onclick="toggleService('svc-compare','compare')">
-            <div class="feat-icon">🔍</div>
-            <div style="flex:1">
-              <strong>Cost Comparison</strong>
-              <div class="tiny">AI compares carriers, hotels, and rental fees</div>
-              <div class="service-details" id="details-compare">
-                <p class="tiny" style="margin:8px 0;line-height:1.6">AI analyzes 1000+ options across all categories. Find hidden deals and save up to 40%.</p>
-                <button class="service-btn" onclick="event.stopPropagation();showToast('Comparing now...')">Compare Now</button>
-                <button class="service-btn" onclick="event.stopPropagation();showToast('Scanning for deals...')">Best Deals</button>
-              </div>
-            </div>
-          </div>
-        </div>
+  <!-- Weather Modal -->
+  <div class="modal" id="weatherModal" aria-hidden="true">
+    <div class="modal-card" style="width:400px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(90deg,#87CEEB,#00BFFF);color:#012;font-weight:600">
+        <span>🌤️ Weather Information</span>
+        <button onclick="closeWeatherModal()" style="background:transparent;border:none;color:#012;cursor:pointer;font-size:18px">✕</button>
       </div>
-
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="card reveal">
-          <h3>🥽 AR/VR Travel Reviews</h3>
-          <p class="tiny" style="line-height:1.6;margin:8px 0">Watch 360° reviews from travellers, preview hotels with AR, and experience tours before you go.</p>
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <button class="btn" onclick="showToast('Loading 360° demo...')">Open 360 Demo</button>
-            <button class="btn" onclick="openVlogsModal()">Explore Vlogs</button>
-          </div>
+      <div style="padding:16px">
+        <div style="margin-bottom:16px">
+          <label class="tiny">Select City</label>
+          <select class="input" id="weatherSelect" onchange="updateWeather()">
+            <option value="Delhi">Delhi, India</option>
+            <option value="Mumbai">Mumbai, India</option>
+            <option value="Bangalore">Bangalore, India</option>
+            <option value="Goa">Goa, India</option>
+            <option value="Paris">Paris, France</option>
+            <option value="Tokyo">Tokyo, Japan</option>
+            <option value="New York">New York, USA</option>
+            <option value="London">London, UK</option>
+          </select>
         </div>
-        <div class="card reveal">
-          <h3>👫 Travel Buddy</h3>
-          <p class="tiny" style="line-height:1.6;margin:8px 0">Find co-travelers, join micro-groups, or post a solo trip and get buddy requests.</p>
-          <div style="margin-top:12px">
-            <button class="btn" onclick="openBuddiesModal()">Find Buddies</button>
+        <div id="weatherDetails" style="text-align:center">
+          <div style="font-size:48px;margin:16px 0">🌤️</div>
+          <div style="font-size:24px;font-weight:700" id="detailTemp">28°C</div>
+          <div style="color:var(--soft);margin:8px 0" id="weatherDesc">Sunny</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+            <div>
+              <div style="font-size:12px;color:var(--soft)">Humidity</div>
+              <div style="font-weight:600" id="humidity">65%</div>
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--soft)">Wind Speed</div>
+              <div style="font-weight:600" id="windSpeed">12 km/h</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- ADVANCED FEATURES -->
-  <section id="advanced-features">
-    <h2 class="reveal" style="text-align:center;margin-bottom:36px">Advanced Travel Intelligence</h2>
-    <div class="adv-cards">
-
-      <!-- Safety & Crowd -->
-      <div class="adv-card reveal">
-        <div class="adv-icon" style="background:linear-gradient(135deg,#0a2a1a,#0a4020)">⭐</div>
-        <div class="adv-title">Safety & Crowd Tracker</div>
-        <div class="adv-sub">Real-time destination intelligence</div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-          <span style="color:var(--soft)">Safety Rating</span>
-          <span id="safetyRating" style="color:#4ade80;font-weight:600">98%</span>
-        </div>
-        <div class="bar-wrap"><div class="bar-fill" id="safetyBar" style="width:98%;background:linear-gradient(90deg,#22c55e,#86efac)"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-          <span style="color:var(--soft)">Crowd Level</span>
-          <span id="crowdLevel" style="color:var(--gold);font-weight:600">Low</span>
-        </div>
-        <div class="bar-wrap"><div class="bar-fill" id="crowdBar" style="width:25%;background:linear-gradient(90deg,var(--gold),#f59e0b)"></div></div>
-        <button class="btn primary" style="width:100%;margin-top:14px;justify-content:center" onclick="toggleSafetyAlerts(this)">Enable Alerts</button>
+  <!-- Currency Modal -->
+  <div class="modal" id="currencyModal" aria-hidden="true">
+    <div class="modal-card" style="width:400px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(90deg,#FFD700,#FFA500);color:#012;font-weight:600">
+        <span>💱 Currency Converter</span>
+        <button onclick="closeCurrencyModal()" style="background:transparent;border:none;color:#012;cursor:pointer;font-size:18px">✕</button>
       </div>
+      <div style="padding:16px">
+        <div style="margin-bottom:16px">
+          <label class="tiny">Amount</label>
+          <input class="input" id="currencyAmount" type="number" placeholder="Enter amount" oninput="convertCurrency()" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div>
+            <label class="tiny">From</label>
+            <select class="input" id="currencyFrom" onchange="convertCurrency()">
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="INR" selected>INR</option>
+              <option value="JPY">JPY</option>
+            </select>
+          </div>
+          <div>
+            <label class="tiny">To</label>
+            <select class="input" id="currencyTo" onchange="convertCurrency()">
+              <option value="INR" selected>INR</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="JPY">JPY</option>
+            </select>
+          </div>
+        </div>
+        <div style="text-align:center;padding:16px;background:#f8f9fa;border-radius:8px">
+          <div style="font-size:12px;color:var(--soft);margin-bottom:8px">Converted Amount</div>
+          <div style="font-size:24px;font-weight:700;color:var(--accent)" id="convertedAmount">0.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <!-- AR/VR -->
-      <div class="adv-card reveal">
-        <div class="adv-icon" style="background:linear-gradient(135deg,#1a0a2a,#2a0a40)">🥽</div>
-        <div class="adv-title">AR/VR Preview</div>
-        <div class="adv-sub">Immersive destination experience</div>
-        <div style="position:relative;border-radius:8px;overflow:hidden;margin-bottom:12px">
-          <div id="vrScene"></div>
-          <div class="vr-badge">360° View</div>
-          <div class="ar-badge">AR Available</div>
+  <!-- Notifications Modal -->
+  <div class="modal" id="notificationsModal" aria-hidden="true">
+    <div class="modal-card" style="width:350px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(90deg,var(--accent),var(--luxury-purple));color:#012;font-weight:600">
+        <span>🔔 Notifications</span>
+        <button onclick="closeNotificationsModal()" style="background:transparent;border:none;color:#012;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px;max-height:400px;overflow-y:auto">
+        <div id="notificationsList">
+          <!-- Notifications will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Agent Modal -->
+  <div class="modal" id="agentModal" aria-hidden="true">
+    <div class="modal-card" style="width:600px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(90deg,var(--accent),var(--luxury-purple));color:#012;font-weight:600">
+        <span>🤖 AI Travel Agent</span>
+        <button onclick="closeAgent()" style="background:transparent;border:none;color:#012;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px">
+        <div id="agentConv" style="max-height:300px;overflow-y:auto;margin-bottom:16px;padding:12px;background:#0f0f23;border-radius:8px;border:1px solid #333">
+          <div style="color:var(--soft);text-align:center;padding:20px">👋 Hi! I'm your AI Travel Agent. Ask me anything about your trip!</div>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn primary" style="flex:1;justify-content:center" onclick="startVRPreview(this)">Start VR Tour</button>
-          <button class="btn" style="flex:1;justify-content:center" onclick="toggleARMode(this)">AR Mode</button>
-        </div>
-      </div>
-
-      <!-- Solo Network -->
-      <div class="adv-card reveal">
-        <div class="adv-icon" style="background:linear-gradient(135deg,#1a1a0a,#2a2a0a)">👫</div>
-        <div class="adv-title">Solo Traveler Network</div>
-        <div class="adv-sub">Connect with fellow adventurers</div>
-        <div class="social-item">
-          <div class="avatar" style="background:linear-gradient(135deg,#22c55e,#f59e0b);color:#0a0a0a">A</div>
-          <div><div style="font-size:13px;font-weight:500">Alex joined Tokyo group</div><div class="tiny">2 hours ago</div></div>
-        </div>
-        <div class="social-item">
-          <div class="avatar" style="background:linear-gradient(135deg,#6366f1,#22c55e);color:#fff">S</div>
-          <div><div style="font-size:13px;font-weight:500">Sarah posted in Bali</div><div class="tiny">5 hours ago</div></div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="btn primary" style="flex:1;justify-content:center" onclick="openBuddiesModal()">Find Buddies</button>
-          <button class="btn" style="flex:1;justify-content:center" onclick="openGroupsModal()">Join Groups</button>
-        </div>
-      </div>
-
-      <!-- Smart Translation -->
-      <div class="adv-card reveal">
-        <div class="adv-icon" style="background:linear-gradient(135deg,#0a1a2a,#0a2040)">🌐</div>
-        <div class="adv-title">Smart Translation</div>
-        <div class="adv-sub">Real-time language assistance</div>
-        <select id="sourceLang" class="input" style="margin-bottom:8px">
-          <option value="en">English</option><option value="es">Spanish</option>
-          <option value="fr">French</option><option value="ja">Japanese</option><option value="zh">Chinese</option>
-        </select>
-        <textarea id="translateInput" class="input" placeholder="Enter text to translate..." style="height:60px;resize:none;margin-bottom:8px" oninput="liveTranslate()"></textarea>
-        <select id="targetLang" class="input" style="margin-bottom:8px" onchange="liveTranslate()">
-          <option value="es">Spanish</option><option value="fr">French</option>
-          <option value="ja">Japanese</option><option value="zh">Chinese</option><option value="en">English</option>
-        </select>
-        <div id="translateOutput" class="input" style="min-height:48px;color:var(--soft);font-style:italic;cursor:default">Translation will appear here...</div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn primary" style="flex:1;justify-content:center" onclick="speakTranslation()">🔊 Speak</button>
-          <button class="btn" style="flex:1;justify-content:center" onclick="savePhrase()">💾 Save</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- PAGES -->
-  <section id="pages">
-    <h2 class="reveal">Pages & Tools</h2>
-    <div class="cards">
-      <div class="card reveal" style="cursor:pointer" onclick="showToast('Opening Flight + Hotel booking engine...')">
-        <h3>✈️ Flight + Hotel</h3>
-        <p class="tiny" style="line-height:1.6;margin:8px 0">Full booking engine with fare prediction & multi-carrier search.</p>
-        <button class="service-btn">Explore</button>
-      </div>
-      <div class="card reveal" style="cursor:pointer" onclick="showToast('Opening Tour Marketplace...')">
-        <h3>🎯 Tour Marketplace</h3>
-        <p class="tiny" style="line-height:1.6;margin:8px 0">Travel agents list packages — filter by ratings, safety score, price.</p>
-        <button class="service-btn">Explore</button>
-      </div>
-      <div class="card reveal" style="cursor:pointer" onclick="showToast('Opening Customer Reviews...')">
-        <h3>⭐ Customer Reviews</h3>
-        <p class="tiny" style="line-height:1.6;margin:8px 0">Verified reviews, AR snippets and verified traveller tags.</p>
-        <button class="service-btn">Explore</button>
-      </div>
-      <div class="card reveal" style="cursor:pointer" onclick="openVlogsModal()">
-        <h3>🎬 Travel Vlogs</h3>
-        <p class="tiny" style="line-height:1.6;margin:8px 0">Creator-driven video feed and editor for travel creators.</p>
-        <button class="service-btn">Explore</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- BOOK A RENTAL -->
-  <section id="book">
-    <h2 class="reveal">Book a Rental</h2>
-    <div class="cards">
-      <div class="card reveal">
-        <h3>🚗 Car / Bike Rental</h3>
-        <p class="tiny" style="margin:6px 0 14px">Choose vehicle, dates, add insurance and emergency mode.</p>
-        <label class="tiny">Pickup city</label>
-        <input id="rentCity" class="input" placeholder="e.g., Mumbai" style="margin-top:4px" />
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <input id="rentFrom" type="date" class="input" />
-          <input id="rentTo" type="date" class="input" />
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn primary" onclick="bookRental()">Reserve</button>
-          <button class="btn" onclick="estimateRental()">Estimate Cost</button>
-        </div>
-        <div id="rentalEst" style="margin-top:10px;color:var(--soft);font-size:13px"></div>
-      </div>
-      <div class="card reveal">
-        <h3>👨‍👩‍👧 Group Packages</h3>
-        <p class="tiny" style="margin:6px 0 14px">Family / Friends packages with dynamic cost splitting.</p>
-        <input id="groupSize" class="input" placeholder="Group size" type="number" min="2" />
-        <button class="btn" style="margin-top:10px" onclick="estimateGroup()">Estimate Split</button>
-        <div id="groupResult" style="margin-top:10px;color:var(--soft);font-size:13px"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- REVIEWS -->
-  <section id="reviews">
-    <h2 class="reveal">Customer Reviews</h2>
-    <div class="reviews-wrap" id="reviewsHolder">
-      <div class="review-card">"Amazing AR preview — saved us hours of research." — Tara, Mumbai</div>
-      <div class="review-card">"AI agent found a cheaper multi-city route I'd never have found." — Raj, Delhi</div>
-      <div class="review-card">"Travel Buddy helped me find a perfect tour mate!" — Sneha, Bangalore</div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
-      <button class="btn" id="revPrev">◀ Prev</button>
-      <button class="btn" id="revNext">Next ▶</button>
-      <span style="margin-left:auto;color:var(--soft);font-size:13px" id="revCounter">1 / 3</span>
-    </div>
-  </section>
-
-  <!-- VLOGS -->
-  <section id="vlogs">
-    <h2 class="reveal">Travel Vlogs</h2>
-    <div class="vlog-grid">
-      <div class="vlog-card reveal" onclick="showToast('Playing: City Street Foods')"><strong>🍜 City Street Foods</strong><div class="tiny" style="margin-top:4px">10m • Delhi</div></div>
-      <div class="vlog-card reveal" onclick="showToast('Playing: Roadtrip Kerala')"><strong>🛶 Roadtrip Kerala</strong><div class="tiny" style="margin-top:4px">8m • Kerala</div></div>
-      <div class="vlog-card reveal" onclick="showToast('Playing: Himalayan Trails')"><strong>🏔 Himalayan Trails</strong><div class="tiny" style="margin-top:4px">14m • Manali</div></div>
-    </div>
-  </section>
-
-  <!-- MAP -->
-  <section id="map-section">
-    <h2 class="reveal" style="text-align:center;margin-bottom:18px">Explore Destinations</h2>
-    <div style="text-align:center;margin-bottom:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <input id="map-search" type="text" class="input" placeholder="Search for places..." style="width:280px;max-width:90%" />
-      <button class="btn primary" onclick="searchPlace()">Search</button>
-    </div>
-    <div id="map-loading" style="text-align:center;color:var(--soft);padding:48px">Loading map...</div>
-    <div id="map"></div>
-  </section>
-
-  <!-- CONTACT -->
-  <section id="contact">
-    <h2 class="reveal">Contact Us</h2>
-    <div class="contact-grid">
-      <div class="card reveal">
-        <h3 style="margin-bottom:14px">💬 Get in touch</h3>
-        <input class="input" id="cName" placeholder="Your name" />
-        <input class="input" id="cEmail" placeholder="Email" style="margin-top:8px" />
-        <textarea class="input" id="cMsg" placeholder="Message"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn primary" onclick="sendContact()" style="flex:1;justify-content:center">Send Message</button>
-          <button class="btn" onclick="showToast('Opening quick help...')" style="flex:1;justify-content:center">Quick Help</button>
-        </div>
-      </div>
-      <div class="card reveal">
-        <h3 style="margin-bottom:14px">📍 Our Offices</h3>
-        <div class="tiny" style="margin-bottom:14px">Available in major Indian cities</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <button class="service-btn" onclick="showToast('Calling Mumbai office...')">📞 Mumbai</button>
-          <button class="service-btn" onclick="showToast('Calling Bangalore office...')">📞 Bangalore</button>
-          <button class="service-btn" onclick="showToast('Calling Delhi office...')">📞 Delhi</button>
-          <button class="service-btn" onclick="showToast('Opening live chat...')">💬 Live Chat</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-inner">
-      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700">Pack<span style="color:var(--accent)">Ngo</span></div>
-      <div class="tiny">© PackNgo 2025 · Built with ❤️ for travelers</div>
-      <div style="display:flex;gap:16px"><a href="#" class="tiny" style="transition:color 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--soft)'">Privacy</a><a href="#" class="tiny" style="transition:color 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--soft)'">Terms</a></div>
-    </div>
-  </footer>
-</main>
-
-<!-- ── MODALS ── -->
-
-<!-- Login -->
-<div class="modal" id="modalLogin">
-  <div class="modal-card" style="width:380px">
-    <div class="modal-head">
-      🔒 Login to PackNgo
-      <button class="modal-close" onclick="closeModal('modalLogin')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="login-avatar">👤</div>
-      <div class="login-form">
-        <input class="input" id="loginEmail" placeholder="Email" type="email" />
-        <input class="input" id="loginPass" placeholder="Password" type="password" />
-        <div class="login-actions">
-          <button class="btn primary" style="flex:1;justify-content:center" onclick="login3D()">Login</button>
-          <button class="btn" style="flex:1;justify-content:center" onclick="closeModal('modalLogin')">Close</button>
-        </div>
-      </div>
-      <div class="social-btns">
-        <div class="social-btn" onclick="loginSocial('Google')" title="Google"><img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_2013_Google.png" alt="Google"></div>
-        <div class="social-btn" onclick="loginSocial('Facebook')" title="Facebook"><img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook"></div>
-        <div class="social-btn" onclick="loginSocial('Apple')" title="Apple"><img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple" style="filter:invert(1)"></div>
-      </div>
-      <div class="login-footer">No account? <a href="#" onclick="openModal('modalSignup');closeModal('modalLogin');return false">Sign up</a> · <a href="#" onclick="openModal('modalForgot');closeModal('modalLogin');return false">Forgot password?</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- Sign Up -->
-<div class="modal" id="modalSignup">
-  <div class="modal-card" style="width:380px">
-    <div class="modal-head">📝 Sign Up for PackNgo <button class="modal-close" onclick="closeModal('modalSignup')">✕</button></div>
-    <div class="modal-body">
-      <div class="login-avatar">🆕</div>
-      <div class="login-form">
-        <input class="input" id="signupName" placeholder="Full Name" type="text" />
-        <input class="input" id="signupEmail" placeholder="Email" type="email" />
-        <input class="input" id="signupPass" placeholder="Password" type="password" />
-        <div class="login-actions">
-          <button class="btn primary" style="flex:1;justify-content:center" onclick="signup3D()">Sign Up</button>
-          <button class="btn" style="flex:1;justify-content:center" onclick="closeModal('modalSignup')">Close</button>
-        </div>
-      </div>
-      <div class="login-footer">Already have an account? <a href="#" onclick="openModal('modalLogin');closeModal('modalSignup');return false">Login</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- Forgot Password -->
-<div class="modal" id="modalForgot">
-  <div class="modal-card" style="width:360px">
-    <div class="modal-head">🔑 Forgot Password <button class="modal-close" onclick="closeModal('modalForgot')">✕</button></div>
-    <div class="modal-body">
-      <div class="login-avatar">❓</div>
-      <div class="login-form">
-        <input class="input" id="forgotEmail" placeholder="Enter your email" type="email" />
-        <div class="login-actions">
-          <button class="btn primary" style="flex:1;justify-content:center" onclick="forgot3D()">Reset Password</button>
-          <button class="btn" style="flex:1;justify-content:center" onclick="closeModal('modalForgot')">Close</button>
-        </div>
-      </div>
-      <div class="login-footer">Back to <a href="#" onclick="openModal('modalLogin');closeModal('modalForgot');return false">Login</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- AI Agent -->
-<div class="modal" id="agentModal">
-  <div class="modal-card" style="width:560px">
-    <div class="modal-head">🤖 AI Travel Agent <button class="modal-close" onclick="closeModal('agentModal')">✕</button></div>
-    <div class="modal-body">
-      <div id="agentConv" style="height:280px;overflow-y:auto;background:#0d0d14;border-radius:10px;padding:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px">
-        <div class="chat-bubble bot">👋 Hi! I'm your AI Travel Agent. Ask me anything about your trip — flights, hotels, safety, or budget tips!</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <input id="agentInput" class="input" placeholder="Ask about flights, hotels, safety, deals..." onkeypress="if(event.key==='Enter')askAgent()" />
-        <button class="btn primary" onclick="askAgent()">Ask</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Itinerary Builder -->
-<div class="modal" id="itineraryModal">
-  <div class="modal-card" style="width:560px">
-    <div class="modal-head" style="background:linear-gradient(90deg,var(--gold),#e09820);color:#0a0a0f">🗺️ Build Your Itinerary <button class="modal-close" style="color:#0a0a0f" onclick="closeModal('itineraryModal')">✕</button></div>
-    <div class="modal-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
-        <div><label class="tiny">Duration</label>
-          <select class="input" id="tripDuration" onchange="updateItinerary()" style="margin-top:4px">
-            <option value="3">3 Days</option><option value="5">5 Days</option>
-            <option value="7" selected>7 Days</option><option value="10">10 Days</option>
-          </select></div>
-        <div><label class="tiny">Destination</label>
-          <select class="input" id="tripDestination" onchange="updateItinerary()" style="margin-top:4px">
-            <option value="goa">Goa</option><option value="kerala">Kerala</option>
-            <option value="manali">Manali</option><option value="rajasthan">Rajasthan</option>
-          </select></div>
-        <div><label class="tiny">Style</label>
-          <select class="input" id="travelStyle" onchange="updateItinerary()" style="margin-top:4px">
-            <option value="adventure">Adventure</option><option value="relaxation">Relaxation</option>
-            <option value="cultural">Cultural</option><option value="food">Food</option>
-          </select></div>
-      </div>
-      <div id="itineraryContent" style="max-height:280px;overflow-y:auto"></div>
-      <div style="text-align:right;margin-top:12px">
-        <button class="btn primary" onclick="exportItinerary()">Export Itinerary</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Weather -->
-<div class="modal" id="weatherModal">
-  <div class="modal-card" style="width:380px">
-    <div class="modal-head" style="background:linear-gradient(90deg,#0077b6,#00b4d8);color:#fff">🌤️ Weather Information <button class="modal-close" onclick="closeModal('weatherModal')">✕</button></div>
-    <div class="modal-body">
-      <select class="input" id="weatherSelect" onchange="updateWeather()" style="margin-bottom:16px">
-        <option>Delhi</option><option>Mumbai</option><option>Bangalore</option><option>Goa</option>
-        <option>Paris</option><option>Tokyo</option><option>New York</option><option>London</option>
-      </select>
-      <div style="text-align:center">
-        <div style="font-size:56px;margin:8px 0" id="weatherIcon">☀️</div>
-        <div style="font-size:28px;font-weight:700;color:var(--accent)" id="detailTemp">28°C</div>
-        <div class="tiny" style="margin:6px 0" id="weatherDesc">Sunny</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
-          <div><div class="tiny">Humidity</div><div style="font-weight:600;margin-top:3px" id="humidity">65%</div></div>
-          <div><div class="tiny">Wind Speed</div><div style="font-weight:600;margin-top:3px" id="windSpeed">12 km/h</div></div>
+          <input id="agentInput" class="input" placeholder="Ask me about flights, hotels, safety, deals..." />
+          <button class="btn" onclick="askAgent()" style="background:linear-gradient(90deg,var(--accent),var(--luxury-purple));color:#012">Ask</button>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Currency -->
-<div class="modal" id="currencyModal">
-  <div class="modal-card" style="width:380px">
-    <div class="modal-head" style="background:linear-gradient(90deg,#b7791f,var(--gold));color:#0a0a0f">💱 Currency Converter <button class="modal-close" style="color:#0a0a0f" onclick="closeModal('currencyModal')">✕</button></div>
-    <div class="modal-body">
-      <label class="tiny">Amount</label>
-      <input class="input" id="currencyAmount" type="number" placeholder="Enter amount" oninput="convertCurrency()" style="margin:4px 0 14px" />
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-        <div><label class="tiny">From</label>
-          <select class="input" id="currencyFrom" onchange="convertCurrency()" style="margin-top:4px">
-            <option>USD</option><option>EUR</option><option>GBP</option><option selected>INR</option><option>JPY</option>
-          </select></div>
-        <div><label class="tiny">To</label>
-          <select class="input" id="currencyTo" onchange="convertCurrency()" style="margin-top:4px">
-            <option selected>INR</option><option>USD</option><option>EUR</option><option>GBP</option><option>JPY</option>
-          </select></div>
+  <!-- Itinerary Builder Modal -->
+  <div class="modal" id="itineraryModal" aria-hidden="true">
+    <div class="modal-card" style="width:600px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--luxury-gold);color:#0f0f0f;font-weight:600">
+        <span>🗺️ Build Your Itinerary</span>
+        <button onclick="closeItineraryModal()" style="background:transparent;border:none;color:#0f0f0f;cursor:pointer;font-size:18px">✕</button>
       </div>
-      <div style="text-align:center;padding:16px;background:var(--card2);border-radius:10px">
-        <div class="tiny" style="margin-bottom:6px">Converted Amount</div>
-        <div style="font-size:28px;font-weight:700;color:var(--accent)" id="convertedAmount">0.00</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Notifications -->
-<div class="modal" id="notificationsModal">
-  <div class="modal-card" style="width:340px">
-    <div class="modal-head">🔔 Notifications <button class="modal-close" onclick="closeModal('notificationsModal')">✕</button></div>
-    <div style="max-height:380px;overflow-y:auto" id="notificationsList"></div>
-  </div>
-</div>
-
-<!-- Travel Vlogs -->
-<div class="modal" id="vlogsModal">
-  <div class="modal-card" style="width:680px">
-    <div class="modal-head">🎬 Travel Vlogs <button class="modal-close" onclick="closeModal('vlogsModal')">✕</button></div>
-    <div style="padding:16px;max-height:500px;overflow-y:auto">
-      <div id="vlogsList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Travel Buddies -->
-<div class="modal" id="buddiesModal">
-  <div class="modal-card" style="width:680px">
-    <div class="modal-head" style="background:linear-gradient(90deg,var(--gold),#e09820);color:#0a0a0f">👫 Find Travel Buddies <button class="modal-close" style="color:#0a0a0f" onclick="closeModal('buddiesModal')">✕</button></div>
-    <div style="padding:16px;max-height:520px;overflow-y:auto">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        <input class="input" id="buddyDestination" placeholder="Destination e.g. Tokyo" />
-        <select class="input" id="buddyInterests"><option value="">All Interests</option><option value="adventure">Adventure</option><option value="culture">Cultural</option><option value="food">Food</option><option value="photography">Photography</option></select>
-      </div>
-      <button class="btn primary" onclick="searchBuddies()" style="width:100%;justify-content:center;margin-bottom:14px">Search Buddies</button>
-      <div id="buddiesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Community Groups -->
-<div class="modal" id="groupsModal">
-  <div class="modal-card" style="width:780px">
-    <div class="modal-head" style="background:linear-gradient(90deg,var(--gold),#e09820);color:#0a0a0f">👥 Travel Communities <button class="modal-close" style="color:#0a0a0f" onclick="closeModal('groupsModal')">✕</button></div>
-    <div style="padding:16px;max-height:560px;overflow-y:auto">
-      <input class="input" id="groupSearch" placeholder="Search communities..." oninput="searchGroups()" style="margin-bottom:14px" />
-      <div id="groupsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Toast -->
-<div id="toast"></div>
-
-<!-- Chat Widget -->
-<button id="chatToggle" onclick="toggleChat()" aria-label="Chat">💬</button>
-<div id="chatWindow">
-  <div class="modal-head" style="border-radius:0">
-    🤖 AI Travel Assistant
-    <button class="modal-close" onclick="toggleChat()">✕</button>
-  </div>
-  <div id="chatMessages">
-    <div class="chat-bubble bot">Hi! I'm your AI Travel Assistant. Ask me anything about travel!</div>
-  </div>
-  <div class="chat-input-row">
-    <input id="chatInput" class="input" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter')sendChatMessage()" />
-    <button class="btn primary" onclick="sendChatMessage()">Send</button>
-  </div>
-</div>
-
-<!-- Back to Top -->
-<button id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
-
-<script>
-  // ── UTILITY ──
-  const $ = id => document.getElementById(id);
-
-  function showToast(msg, ms = 3200) {
-    const t = $('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(t._t);
-    t._t = setTimeout(() => t.classList.remove('show'), ms);
-  }
-
-  function openModal(id) { $(id).classList.add('open'); }
-  function closeModal(id) { $(id).classList.remove('open'); }
-
-  // Close modal on backdrop click
-  document.querySelectorAll('.modal').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
-  });
-
-  // ESC to close modals
-  window.addEventListener('keydown', e => {
-    if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
-  });
-
-  // ── LOADING SCREEN (fixed — no dependency on external scripts) ──
-  function hideLoadingScreen() {
-    const ls = $('loadingScreen');
-    if (ls) {
-      ls.classList.add('hide');
-      setTimeout(() => { ls.style.display = 'none'; }, 600);
-    }
-  }
-  // Hide after 3s no matter what
-  setTimeout(hideLoadingScreen, 3000);
-
-  // ── MOBILE NAV ──
-  const navToggle = $('navToggle');
-  const mainNav = $('mainNav');
-  navToggle.addEventListener('click', () => {
-    const open = mainNav.classList.toggle('open');
-    navToggle.setAttribute('aria-expanded', String(open));
-  });
-  mainNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
-    mainNav.classList.remove('open');
-    navToggle.setAttribute('aria-expanded', 'false');
-  }));
-
-  // ── HEADER SCROLL EFFECT ──
-  window.addEventListener('scroll', () => {
-    document.querySelector('header').style.background =
-      window.scrollY > 40 ? 'rgba(10,10,15,0.98)' : 'rgba(10,10,15,0.92)';
-    $('backTop').classList.toggle('visible', window.scrollY > 300);
-  });
-
-  // ── SCROLL REVEAL ──
-  const revObs = new IntersectionObserver(entries => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revObs.unobserve(e.target); } });
-  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.reveal').forEach(el => revObs.observe(el));
-
-  // ── TYPEWRITER ──
-  (function() {
-    const el = $('heroTitle');
-    const text = 'PackNgo — Plan smarter, travel bolder';
-    el.innerHTML = '';
-    let i = 0;
-    setTimeout(() => {
-      const t = setInterval(() => {
-        if (i < text.length) { el.innerHTML = text.slice(0, ++i) + (i < text.length ? '<span style="border-right:2px solid var(--accent)">&nbsp;</span>' : ''); }
-        else { el.innerHTML = text; clearInterval(t); }
-      }, 55);
-    }, 500);
-  })();
-
-  // ── LOGIN ──
-  $('openLoginBtn').addEventListener('click', e => { e.preventDefault(); openModal('modalLogin'); });
-
-  function login3D() {
-    const email = $('loginEmail').value.trim();
-    const pass = $('loginPass').value.trim();
-    if (!email || !pass) return showToast('Please enter email and password');
-    localStorage.setItem('packngo_login', email);
-    showToast('✅ Login successful! Welcome back.');
-    closeModal('modalLogin');
-    $('loginEmail').value = ''; $('loginPass').value = '';
-  }
-  function loginSocial(p) { showToast(`Connecting with ${p}... (Demo)`); }
-  function signup3D() {
-    const n = $('signupName').value.trim(), e = $('signupEmail').value.trim(), p = $('signupPass').value.trim();
-    if (!n || !e || !p) return showToast('Please fill in all fields');
-    showToast('🎉 Account created! Welcome to PackNgo.');
-    closeModal('modalSignup');
-    ['signupName','signupEmail','signupPass'].forEach(id => $(id).value = '');
-  }
-  function forgot3D() {
-    const e = $('forgotEmail').value.trim();
-    if (!e) return showToast('Please enter your email');
-    showToast(`📧 Reset link sent to ${e}`);
-    closeModal('modalForgot'); $('forgotEmail').value = '';
-  }
-  // Restore saved login
-  const savedLogin = localStorage.getItem('packngo_login');
-  if (savedLogin && $('loginEmail')) $('loginEmail').value = savedLogin;
-
-  // ── COST COMPARE ──
-  function compareCost() {
-    const from = $('cmpFrom').value || 'Delhi';
-    const to = $('cmpTo').value || 'Goa';
-    const est = Math.floor(2500 + Math.random() * 7000);
-    $('bestRoute').textContent = `${from} → ${to}`;
-    $('estCost').textContent = `₹${est.toLocaleString()}`;
-    localStorage.setItem('packngo_route', JSON.stringify({ from, to, est }));
-    showToast(`✈ Best route found: ${from} → ${to} for ₹${est.toLocaleString()}`);
-  }
-
-  // ── SCROLL TO BOOK ──
-  function scrollToBook() {
-    $('book').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  // ── SERVICE CARD TOGGLE ──
-  function toggleService(cardId, detailId) {
-    const card = $(cardId);
-    const details = $('details-' + detailId);
-    if (!details) return;
-    const isOpen = details.classList.contains('show');
-    document.querySelectorAll('.service-details.show').forEach(d => d.classList.remove('show'));
-    document.querySelectorAll('.feature-item.expanded').forEach(c => c.classList.remove('expanded'));
-    if (!isOpen) { details.classList.add('show'); card.classList.add('expanded'); }
-  }
-
-  // ── ABOUT CARD TOGGLE ──
-  function toggleAboutDetail(i) {
-    const el = $('about-expand-' + i);
-    if (!el) return;
-    const open = el.classList.contains('show');
-    document.querySelectorAll('[id^="about-expand-"].show').forEach(e => e.classList.remove('show'));
-    if (!open) el.classList.add('show');
-  }
-
-  // ── RENTAL / GROUP ──
-  function bookRental() {
-    const city = $('rentCity').value || 'your city';
-    showToast(`🚗 Rental reserved in ${city}! Check your email for confirmation.`);
-  }
-  function estimateRental() {
-    const from = $('rentFrom').value, to = $('rentTo').value;
-    if (!from || !to) return showToast('Please select pickup and return dates');
-    const days = Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000));
-    const cost = days * (800 + Math.floor(Math.random() * 400));
-    $('rentalEst').textContent = `Estimated cost: ₹${cost.toLocaleString()} for ${days} day${days>1?'s':''}`;
-  }
-  function estimateGroup() {
-    const n = parseInt($('groupSize').value) || 0;
-    if (n < 2) return showToast('Please enter a valid group size (2+)');
-    const total = 8000 + Math.floor(Math.random() * 6000);
-    $('groupResult').textContent = `Total: ₹${total.toLocaleString()} · Per person: ₹${Math.round(total/n).toLocaleString()}`;
-  }
-
-  // ── REVIEW CAROUSEL ──
-  let revIdx = 0;
-  const revCards = () => $('reviewsHolder').querySelectorAll('.review-card');
-  function updateCarousel() {
-    const cards = revCards();
-    cards.forEach((c, i) => { c.style.display = i === revIdx ? 'block' : 'none'; });
-    $('revCounter').textContent = `${revIdx + 1} / ${cards.length}`;
-  }
-  $('revPrev').addEventListener('click', () => { const cards = revCards(); revIdx = (revIdx - 1 + cards.length) % cards.length; updateCarousel(); });
-  $('revNext').addEventListener('click', () => { const cards = revCards(); revIdx = (revIdx + 1) % cards.length; updateCarousel(); });
-  updateCarousel();
-
-  // ── CONTACT ──
-  function sendContact() {
-    const n = $('cName').value.trim(), e = $('cEmail').value.trim(), m = $('cMsg').value.trim();
-    if (!n || !e || !m) return showToast('Please fill all contact fields');
-    showToast(`✅ Message sent! We'll get back to ${n} within 24 hours.`);
-    ['cName','cEmail','cMsg'].forEach(id => $(id).value = '');
-  }
-
-  // ── WEATHER ──
-  const weatherDB = {
-    Delhi:     { temp:'28°C', desc:'Sunny',         icon:'☀️',  humidity:'45%', wind:'15 km/h' },
-    Mumbai:    { temp:'30°C', desc:'Humid',          icon:'🌤️', humidity:'75%', wind:'12 km/h' },
-    Bangalore: { temp:'24°C', desc:'Pleasant',       icon:'🌤️', humidity:'60%', wind:'10 km/h' },
-    Goa:       { temp:'32°C', desc:'Beach Weather',  icon:'🏖️', humidity:'70%', wind:'18 km/h' },
-    Paris:     { temp:'18°C', desc:'Cloudy',         icon:'☁️',  humidity:'55%', wind:'8 km/h'  },
-    Tokyo:     { temp:'22°C', desc:'Clear',          icon:'🌤️', humidity:'50%', wind:'11 km/h' },
-    'New York':{ temp:'15°C', desc:'Cool',           icon:'🌥️', humidity:'40%', wind:'20 km/h' },
-    London:    { temp:'16°C', desc:'Rainy',          icon:'🌧️', humidity:'80%', wind:'14 km/h' }
-  };
-  function toggleWeather() { updateWeather(); openModal('weatherModal'); }
-  function updateWeather() {
-    const city = $('weatherSelect') ? $('weatherSelect').value : 'Delhi';
-    const d = weatherDB[city] || weatherDB['Delhi'];
-    if($('detailTemp')) $('detailTemp').textContent = d.temp;
-    if($('weatherDesc')) $('weatherDesc').textContent = d.desc;
-    if($('weatherIcon')) $('weatherIcon').textContent = d.icon;
-    if($('humidity')) $('humidity').textContent = d.humidity;
-    if($('windSpeed')) $('windSpeed').textContent = d.wind;
-    $('weatherTemp').textContent = d.temp;
-    $('weatherCity').textContent = city;
-  }
-
-  // ── CURRENCY ──
-  const rates = {
-    USD:{ INR:83.5, EUR:0.92, GBP:0.79, JPY:150.2, USD:1 },
-    EUR:{ INR:90.8, USD:1.09, GBP:0.86, JPY:163.4, EUR:1 },
-    GBP:{ INR:105.6,USD:1.27, EUR:1.16, JPY:190.1, GBP:1 },
-    INR:{ USD:0.012,EUR:0.011,GBP:0.0095,JPY:1.8,  INR:1 },
-    JPY:{ INR:0.556,USD:0.0067,EUR:0.0061,GBP:0.0053,JPY:1 }
-  };
-  function toggleCurrency() { openModal('currencyModal'); }
-  function convertCurrency() {
-    const amt = parseFloat($('currencyAmount').value) || 0;
-    const from = $('currencyFrom').value, to = $('currencyTo').value;
-    const r = rates[from]?.[to] || 1;
-    $('convertedAmount').textContent = (amt * r).toFixed(2);
-    $('currencyRate').textContent = `1 ${from} = ${r.toFixed(4)} ${to}`;
-  }
-
-  // ── NOTIFICATIONS ──
-  const notifData = [
-    { icon:'✈️', title:'Flight Deal Alert',     msg:'20% off on flights to Goa this weekend!',         time:'2 min ago',  urgent:true  },
-    { icon:'🏖️', title:'Hotel Recommendation',  msg:'Beach Resort in Kerala — book now for best rates', time:'15 min ago', urgent:false },
-    { icon:'🌤️', title:'Weather Update',         msg:'Clear skies in Delhi for your trip',              time:'1 hour ago', urgent:false },
-    { icon:'💰', title:'Price Drop',             msg:'Your saved Mumbai flight is ₹2,500 cheaper!',     time:'2 hours ago',urgent:true  },
-    { icon:'🎯', title:'Personalized Offer',     msg:'Exclusive 15% discount on your next booking',     time:'1 day ago',  urgent:false }
-  ];
-  function toggleNotifications() {
-    $('notificationBadge').style.display = 'none';
-    const list = $('notificationsList');
-    list.innerHTML = notifData.map(n => `
-      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background=''" onclick="showToast('Notification: ${n.title}')">
-        <span style="font-size:18px">${n.icon}</span>
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:13px">${n.title}${n.urgent ? ' <span style="color:#ff4757;font-size:10px">● NEW</span>' : ''}</div>
-          <div class="tiny" style="margin:3px 0">${n.msg}</div>
-          <div style="font-size:10px;color:#555">${n.time}</div>
+      <div style="padding:16px">
+        <div style="margin-bottom:16px">
+          <label class="tiny">Trip Duration</label>
+          <select class="input" id="tripDuration" onchange="updateItinerary()">
+            <option value="3">3 Days</option>
+            <option value="5">5 Days</option>
+            <option value="7" selected>7 Days</option>
+            <option value="10">10 Days</option>
+          </select>
         </div>
-      </div>`).join('');
-    openModal('notificationsModal');
-  }
-
-  // ── AI AGENT ──
-  $('openAgentBtn').addEventListener('click', () => { openModal('agentModal'); });
-  function askAgent() {
-    const qEl = $('agentInput'), q = qEl.value.trim();
-    if (!q) return showToast('Please type a question');
-    const conv = $('agentConv');
-    conv.innerHTML += `<div class="chat-bubble user">${q}</div>`;
-    const low = q.toLowerCase();
-    let reply = 'Great question! This is a demo response. Connect a backend API for live travel intelligence.';
-    if (low.includes('cheap') || low.includes('save') || low.includes('price')) reply = '💡 Try booking +/- 3 days for up to 30% savings. Tuesdays and Wednesdays are typically cheapest for flights.';
-    else if (low.includes('safe') || low.includes('safety')) reply = '🛡️ Current SafeScore: 8.6/10. Avoid crowded areas after 10pm. Our real-time tracker shows low crowd levels at popular spots.';
-    else if (low.includes('hotel')) reply = '🏨 I found 12 hotels matching your profile. Best value: City Palace Hotel at ₹3,200/night with 4.5★ rating.';
-    else if (low.includes('weather')) reply = '🌤️ Destination forecast looks great for your trip! Expect clear skies and 26–30°C. Pack light clothing.';
-    setTimeout(() => {
-      conv.innerHTML += `<div class="chat-bubble bot">${reply}</div>`;
-      conv.scrollTop = conv.scrollHeight;
-    }, 500);
-    qEl.value = ''; conv.scrollTop = conv.scrollHeight;
-  }
-
-  // ── ITINERARY ──
-  const itinDB = {
-    goa: {
-      adventure:   ['Beach hopping & water sports','Scuba diving & dolphin watching','Trekking & adventure trails','Island hopping & boat rides','Parasailing & jet skiing','Beach relaxation & spa','Cultural sites & farewell dinner'],
-      relaxation:  ['Beach resort check-in & spa','Private beach & yoga sessions','Ayurvedic treatments & wellness','Sunset cruises & fine dining','Beachside massages & meditation','Tranquil morning walks','Peaceful farewell brunch'],
-      cultural:    ['Old Goa churches & history tour','Local markets & handicraft shopping','Portuguese architecture walk','Spice plantation visit','Traditional cooking class','Folk dance performance','Cultural farewell evening'],
-      food:        ['Seafood feast at beach shacks','Goan cuisine cooking class','Wine tasting & fine dining','Street food exploration','Beachside BBQs & sundowners','Gourmet restaurant hopping','Farewell dinner at top restaurant']
-    },
-    kerala: {
-      adventure:   ['Backwater boat journey','Hill station trekking','Wildlife safari in Periyar','River rafting experience','Spice plantation tours','Beach adventures in Kovalam','Cultural experiences & farewell'],
-      relaxation:  ['Ayurvedic resort arrival','Panchakarma treatments & yoga','Backwater houseboat stay','Meditation & mindfulness retreat','Serene nature walks','Wellness therapies','Peaceful farewell ceremony'],
-      cultural:    ['Fort Kochi heritage walk','Kathakali dance performance','Tea plantation visit in Munnar','Traditional art forms workshop','Temple and church visits','Cultural cooking class','Farewell at cultural show'],
-      food:        ['Seafood specialties tour','Kerala sadya experience','Spice garden & cooking demo','Local eatery trail','Toddy shop experience','Gourmet backwater dining','Culinary farewell feast']
-    },
-    manali: {
-      adventure:   ['Arrival & acclimatization','Solang Valley adventure sports','Rohtang Pass excursion','Beas River rafting','Hampta Pass trek','Kheerganga hot springs','Farewell bonfire night'],
-      relaxation:  ['Mountain resort check-in','Himalayan spa & yoga','Scenic valley walks','Hot spring therapy','Meditation with mountain views','Local market browsing','Mountain farewell dinner'],
-      cultural:    ['Old Manali village walk','Hadimba temple visit','Tibetan monastery tour','Local handicraft shopping','Mountain cooking class','Folk music evening','Cultural farewell'],
-      food:        ['Himalayan cuisine exploration','Local dhaba trail','Apple orchard visit','Mountain tea tasting','Trout fish experience','Campfire cooking','Farewell feast']
-    },
-    rajasthan: {
-      adventure:   ['Desert safari in Jaisalmer','Camel trek at sunrise','Hot air balloon over Jaipur','Desert camping overnight','Quad biking in sand dunes','Mehrangarh Fort exploration','Royal farewell dinner'],
-      relaxation:  ['Heritage palace hotel check-in','Spa with Ayurvedic treatments','Sunset at Lake Pichola','Rooftop yoga sessions','Gardens & palace walks','Traditional music recital','Grand farewell banquet'],
-      cultural:    ['Amber Fort & City Palace','Jaisalmer golden fort tour','Stepwell (Chand Baori) visit','Block printing workshop','Puppet show & folk dance','Rajasthani cooking class','Cultural farewell'],
-      food:        ['Dal Baati Churma trail','Royal Rajasthani thali','Spice market tour','Street food in Jaipur','Desert cooking over campfire','Heritage restaurant dinner','Grand farewell feast']
-    }
-  };
-  function openItineraryBuilder() { openModal('itineraryModal'); updateItinerary(); }
-  function updateItinerary() {
-    const dur = parseInt($('tripDuration').value);
-    const dest = $('tripDestination').value;
-    const style = $('travelStyle').value;
-    const acts = itinDB[dest]?.[style] || itinDB.goa.adventure;
-    $('itineraryContent').innerHTML = acts.slice(0, dur).map((a, i) => `
-      <div class="itin-day"><div class="itin-day-num">DAY ${i+1}</div><div style="font-size:13px;color:var(--text)">${a}</div></div>
-    `).join('');
-  }
-  function exportItinerary() {
-    const text = $('itineraryContent').innerText;
-    navigator.clipboard.writeText(text).then(() => showToast('📋 Itinerary copied to clipboard!')).catch(() => showToast('Copy failed — please copy manually'));
-  }
-
-  // ── SAFETY TRACKER ──
-  let alertsOn = false;
-  function toggleSafetyAlerts(btn) {
-    alertsOn = !alertsOn;
-    btn.textContent = alertsOn ? '🔔 Alerts On' : 'Enable Alerts';
-    btn.style.background = alertsOn ? 'linear-gradient(90deg,#22c55e,#16a34a)' : 'var(--accent)';
-    showToast(alertsOn ? '🛡️ Safety alerts enabled! You\'ll be notified of changes.' : 'Alerts disabled.');
-    if (alertsOn && !window._safetyInt) {
-      window._safetyInt = setInterval(() => {
-        const safety = Math.max(85, Math.min(100, parseFloat($('safetyRating').textContent) + (Math.random()-0.5)*4));
-        const crowd = Math.max(10, Math.min(90, parseFloat($('crowdBar').style.width) + (Math.random()-0.5)*15));
-        $('safetyRating').textContent = Math.round(safety) + '%';
-        $('safetyBar').style.width = safety + '%';
-        $('crowdBar').style.width = crowd + '%';
-        $('crowdLevel').textContent = crowd < 30 ? 'Low' : crowd < 60 ? 'Medium' : 'High';
-      }, 6000);
-    } else if (!alertsOn && window._safetyInt) { clearInterval(window._safetyInt); window._safetyInt = null; }
-  }
-
-  // ── AR/VR ──
-  let vrOn = false, arOn = false;
-  function startVRPreview(btn) {
-    vrOn = !vrOn;
-    $('vrScene').style.animationDuration = vrOn ? '8s' : '20s';
-    btn.textContent = vrOn ? '⏹ Exit VR Tour' : 'Start VR Tour';
-    showToast(vrOn ? '🥽 VR Tour started! Drag to look around.' : 'VR Tour ended.');
-  }
-  function toggleARMode(btn) {
-    arOn = !arOn;
-    btn.textContent = arOn ? '📷 Exit AR' : 'AR Mode';
-    showToast(arOn ? '📱 AR Mode: Point camera at landmarks for info.' : 'AR Mode off.');
-  }
-
-  // ── TRAVEL BUDDIES ──
-  const buddyDB = [
-    { id:1, name:'Emma',   age:26, avatar:'👩', loc:'London',    dest:'Tokyo',  bio:'Adventure seeker exploring Asia for 3 weeks',           interests:['adventure','photography','food'],    style:'Off-the-beaten-path explorer' },
-    { id:2, name:'Carlos', age:28, avatar:'👨', loc:'Barcelona', dest:'Goa',    bio:'Beach enthusiast and digital nomad',                    interests:['beach','culture','surfing'],         style:'Relaxed beach bum' },
-    { id:3, name:'Lisa',   age:24, avatar:'👩', loc:'New York',  dest:'Paris',  bio:'Photographer capturing travel moments & local stories', interests:['photography','culture','food'],      style:'Cultural explorer' },
-    { id:4, name:'James',  age:30, avatar:'👨', loc:'Sydney',    dest:'Bali',   bio:'Yoga and wellness enthusiast',                          interests:['wellness','culture','food'],         style:'Mindful traveler' },
-    { id:5, name:'Sophia', age:25, avatar:'👩', loc:'Rome',      dest:'Manali', bio:'Adventure sports junkie and nature lover',              interests:['adventure','hiking','photography'],  style:'Adrenaline seeker' },
-    { id:6, name:'Marco',  age:29, avatar:'👨', loc:'Milan',     dest:'Kerala', bio:'Foodie exploring culinary traditions worldwide',        interests:['food','culture','cooking'],          style:'Gastronomic explorer' }
-  ];
-  const groupDB = [
-    { id:1, icon:'🇯🇵', name:'Tokyo Solo Travelers',   members:234, desc:'Connect with solo travelers in Tokyo and Japan',         next:'Pub crawl in Shibuya — Mar 15'   },
-    { id:2, icon:'🏖️', name:'Goa Beach Lovers',         members:189, desc:'Beach enthusiasts sharing Goa tips and meetups',        next:'Sunset yoga session — Mar 18'    },
-    { id:3, icon:'📸', name:'Photography Travelers',    members:456, desc:'Photographers sharing tips and guided photo walks',      next:'Golden hour walk — Mar 20'       },
-    { id:4, icon:'🎒', name:'Backpackers India',         members:312, desc:'Budget travelers exploring India and sharing tips',     next:'Group trip to Rajasthan — Apr 1' },
-    { id:5, icon:'🍜', name:'Foodie Explorers',          members:278, desc:'Food lovers on culinary adventures worldwide',          next:'Street food tour — Mar 22'       },
-    { id:6, icon:'⛰️', name:'Adventure Junkies',         members:398, desc:'Thrill-seekers finding adventure activities',           next:'Trekking expedition — Apr 5'     }
-  ];
-  function openBuddiesModal() { openModal('buddiesModal'); renderBuddies(buddyDB); }
-  function renderBuddies(list) {
-    $('buddiesList').innerHTML = list.map(b => `
-      <div class="buddy-card">
-        <div style="font-size:44px;margin-bottom:8px">${b.avatar}</div>
-        <div style="font-weight:600;font-size:15px">${b.name}, ${b.age}</div>
-        <div style="color:var(--accent);font-size:12px;margin:3px 0">${b.loc} → ${b.dest}</div>
-        <div class="tiny" style="margin:6px 0;line-height:1.5">${b.bio}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:10px">
-          ${b.interests.map(t => `<span style="background:rgba(30,144,255,0.12);color:var(--accent);padding:2px 7px;border-radius:4px;font-size:11px">${t}</span>`).join('')}
+        <div style="margin-bottom:16px">
+          <label class="tiny">Destination</label>
+          <select class="input" id="tripDestination" onchange="updateItinerary()">
+            <option value="goa">Goa, India</option>
+            <option value="kerala">Kerala, India</option>
+            <option value="manali">Manali, India</option>
+            <option value="rajasthan">Rajasthan, India</option>
+            <option value="paris">Paris, France</option>
+            <option value="tokyo">Tokyo, Japan</option>
+          </select>
         </div>
-        <button class="btn primary" style="width:100%;justify-content:center" onclick="showToast('Sending request to ${b.name}...')">Connect</button>
-      </div>`).join('');
-  }
-  function searchBuddies() {
-    const dest = $('buddyDestination').value.toLowerCase();
-    const int = $('buddyInterests').value;
-    const res = buddyDB.filter(b => (!dest || b.dest.toLowerCase().includes(dest)) && (!int || b.interests.includes(int)));
-    if (!res.length) return showToast('No buddies found — try different filters');
-    renderBuddies(res);
-    showToast(`Found ${res.length} travel buddy${res.length > 1 ? 'ies' : 'y'}!`);
-  }
-  function openGroupsModal() { openModal('groupsModal'); renderGroups(groupDB); }
-  function renderGroups(list) {
-    $('groupsList').innerHTML = list.map(g => `
-      <div class="group-card">
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <span style="font-size:28px">${g.icon}</span>
-          <div style="flex:1">
-            <div style="font-weight:600;font-size:14px">${g.name}</div>
-            <div style="color:var(--accent);font-size:11px;margin:2px 0">${g.members.toLocaleString()} members</div>
-            <div class="tiny" style="line-height:1.5;margin:6px 0">${g.desc}</div>
-            <div style="background:rgba(30,144,255,0.06);padding:6px 8px;border-radius:6px;margin-bottom:8px">
-              <div style="font-size:10px;color:var(--accent);text-transform:uppercase;margin-bottom:2px">Next Event</div>
-              <div class="tiny">${g.next}</div>
-            </div>
-            <button class="btn primary" style="width:100%;justify-content:center" onclick="showToast('Joining ${g.name}...')">Join Group</button>
+        <div style="margin-bottom:16px">
+          <label class="tiny">Travel Style</label>
+          <select class="input" id="travelStyle" onchange="updateItinerary()">
+            <option value="adventure">Adventure</option>
+            <option value="relaxation">Relaxation</option>
+            <option value="cultural">Cultural</option>
+            <option value="food">Food & Wine</option>
+          </select>
+        </div>
+        <div id="itineraryContent" style="max-height:300px;overflow-y:auto">
+          <!-- Itinerary will be generated here -->
+        </div>
+        <div style="margin-top:16px;text-align:right">
+          <button class="btn" onclick="exportItinerary()">Export Itinerary</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Travel Buddies Modal -->
+  <div class="modal" id="buddiesModal" aria-hidden="true">
+    <div class="modal-card" style="width:700px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--luxury-gold);color:#0f0f0f;font-weight:600">
+        <span>👫 Find Travel Buddies</span>
+        <button onclick="closeBuddiesModal()" style="background:transparent;border:none;color:#0f0f0f;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px;max-height:500px;overflow-y:auto">
+        <div style="margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="tiny">Destination</label>
+            <input class="input" id="buddyDestination" placeholder="e.g., Tokyo, Goa..." />
+          </div>
+          <div>
+            <label class="tiny">Travel Dates</label>
+            <input class="input" id="buddyDates" type="month" />
+          </div>
+          <div>
+            <label class="tiny">Interests</label>
+            <select class="input" id="buddyInterests">
+              <option value="">All Interests</option>
+              <option value="adventure">Adventure</option>
+              <option value="culture">Cultural</option>
+              <option value="food">Food & Wine</option>
+              <option value="photography">Photography</option>
+            </select>
+          </div>
+          <div>
+            <label class="tiny">Age Range</label>
+            <select class="input" id="buddyAge">
+              <option value="">Any Age</option>
+              <option value="18-25">18-25</option>
+              <option value="25-35">25-35</option>
+              <option value="35+">35+</option>
+            </select>
           </div>
         </div>
-      </div>`).join('');
-  }
-  function searchGroups() {
-    const q = $('groupSearch').value.toLowerCase();
-    renderGroups(q ? groupDB.filter(g => g.name.toLowerCase().includes(q) || g.desc.toLowerCase().includes(q)) : groupDB);
-  }
-
-  // ── VLOGS ──
-  const vlogData = [
-    { thumb:'🌃', title:'Tokyo Nights: Hidden Gems',    creator:'WanderlustMia',      views:'2.3M' },
-    { thumb:'🏔️', title:'Swiss Alps Adventure',         creator:'MountainMike',       views:'1.8M' },
-    { thumb:'🏖️', title:'Bali Beach Vibes',             creator:'IslandExplorer',     views:'3.1M' },
-    { thumb:'🥐', title:'Paris Food Tour',               creator:'FoodieFran',         views:'4.2M' },
-    { thumb:'🦁', title:'Safari in Kenya',               creator:'WildlifeWendy',      views:'2.7M' },
-    { thumb:'🌌', title:'Iceland Aurora Chase',          creator:'NorthernLightsNick', views:'1.5M' }
-  ];
-  function openVlogsModal() {
-    $('vlogsList').innerHTML = vlogData.map(v => `
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:transform 0.2s" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''" onclick="showToast('Playing: ${v.title}')">
-        <div style="font-size:28px;margin-bottom:8px">${v.thumb}</div>
-        <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:4px">${v.title}</div>
-        <div class="tiny">by ${v.creator} · ${v.views} views</div>
-        <div style="display:flex;gap:6px;margin-top:10px">
-          <button class="service-btn" onclick="event.stopPropagation();showToast('Liked!')">👍 Like</button>
-          <button class="service-btn" onclick="event.stopPropagation();showToast('Share link copied!')">🔗 Share</button>
+        <button class="btn" onclick="searchBuddies()" style="width:100%;background:var(--luxury-gold);color:#0f0f0f;font-weight:500;margin-bottom:16px">Search Buddies</button>
+        
+        <div id="buddiesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+          <!-- Buddies will be populated here -->
         </div>
-      </div>`).join('');
-    openModal('vlogsModal');
-  }
+      </div>
+    </div>
+  </div>
 
-  // ── TRANSLATION ──
-  const transDB = {
-    'en-es':{ 'Hello':'Hola', 'Thank you':'Gracias', 'Where is the bathroom?':'¿Dónde está el baño?', 'How much?':'¿Cuánto cuesta?' },
-    'en-fr':{ 'Hello':'Bonjour', 'Thank you':'Merci', 'Where is the bathroom?':'Où sont les toilettes?', 'How much?':'Combien ça coûte?' },
-    'en-ja':{ 'Hello':'こんにちは', 'Thank you':'ありがとう', 'Where is the bathroom?':'トイレはどこですか？', 'How much?':'いくらですか？' },
-    'en-zh':{ 'Hello':'你好', 'Thank you':'谢谢', 'Where is the bathroom?':'洗手间在哪里？', 'How much?':'这个多少钱？' }
-  };
-  let savedPhrases = [];
-  function liveTranslate() {
-    const src = $('sourceLang').value, tgt = $('targetLang').value;
-    const text = $('translateInput').value.trim();
-    const out = $('translateOutput');
-    if (!text) { out.textContent = 'Translation will appear here...'; out.style.color = 'var(--soft)'; return; }
-    const key = `${src}-${tgt}`;
-    const translation = transDB[key]?.[text] || `[${tgt.toUpperCase()}] ${text}`;
-    out.textContent = translation; out.style.color = 'var(--accent)';
-  }
-  function speakTranslation() {
-    const t = $('translateOutput').textContent;
-    if (!t || t.includes('will appear')) return showToast('Please enter text first');
-    showToast('🔊 Speaking translation... (Speech API would play here)');
-  }
-  function savePhrase() {
-    const i = $('translateInput').value, o = $('translateOutput').textContent;
-    if (!i || o.includes('will appear')) return showToast('Please translate something first');
-    savedPhrases.push({ original:i, translation:o });
-    showToast(`💾 Phrase saved! Total saved: ${savedPhrases.length}`);
-  }
+  <!-- Community Groups Modal -->
+  <div class="modal" id="groupsModal" aria-hidden="true">
+    <div class="modal-card" style="width:800px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--luxury-gold);color:#0f0f0f;font-weight:600">
+        <span>👥 Travel Communities</span>
+        <button onclick="closeGroupsModal()" style="background:transparent;border:none;color:#0f0f0f;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px;max-height:600px;overflow-y:auto">
+        <div style="margin-bottom:16px">
+          <input class="input" id="groupSearch" placeholder="Search communities..." onkeyup="searchGroups()" />
+        </div>
+        <div id="groupsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px">
+          <!-- Groups will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
 
-  // ── CHAT ──
-  function toggleChat() {
-    const w = $('chatWindow');
-    w.style.display = w.style.display === 'none' || !w.style.display ? 'flex' : 'none';
-    if (w.style.display === 'flex') w.style.flexDirection = 'column';
-  }
-  function sendChatMessage() {
-    const input = $('chatInput'), msg = input.value.trim();
-    if (!msg) return;
-    const msgs = $('chatMessages');
-    msgs.innerHTML += `<div class="chat-bubble user">${msg}</div>`;
-    input.value = ''; msgs.scrollTop = msgs.scrollHeight;
-    const low = msg.toLowerCase();
-    let reply = 'This is a demo AI response. Connect the Anthropic or OpenAI API for live responses!';
-    if (low.includes('flight')) reply = '✈️ I can help with flights! Use the cost comparison tool above or click "Start Booking" to find the best deals.';
-    else if (low.includes('hotel')) reply = '🏨 For hotels, I recommend booking 3-4 weeks in advance. Our AI scans 200+ hotel sites for the best rates.';
-    else if (low.includes('safe')) reply = '🛡️ Check our Safety & Crowd Tracker in the AI Features section for real-time destination safety scores!';
-    else if (low.includes('hello') || low.includes('hi')) reply = '👋 Hello! I\'m ready to help plan your perfect trip. Ask me about destinations, deals, or safety!';
-    setTimeout(() => { msgs.innerHTML += `<div class="chat-bubble bot">${reply}</div>`; msgs.scrollTop = msgs.scrollHeight; }, 600);
-  }
+  <!-- Buddy Profile Modal -->
+  <div class="modal" id="buddyProfileModal" aria-hidden="true">
+    <div class="modal-card" style="width:500px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--luxury-gold);color:#0f0f0f;font-weight:600">
+        <span id="profileName">Buddy Profile</span>
+        <button onclick="closeBuddyProfileModal()" style="background:transparent;border:none;color:#0f0f0f;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:20px">
+        <div style="text-align:center;margin-bottom:16px">
+          <div id="profileAvatar" style="width:80px;height:80px;border-radius:50%;background:var(--luxury-gold);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px"></div>
+          <h3 id="profileTitle" style="margin:0;color:#ffffff"></h3>
+          <div id="profileLocation" style="color:var(--soft);font-size:12px;margin-top:4px"></div>
+        </div>
+        
+        <div style="margin-bottom:16px;padding:12px;background:#1a1a1a;border-radius:8px;border:1px solid rgba(30,144,255,0.1)">
+          <h4 style="margin:0 0 8px 0;color:var(--accent);font-size:12px">ABOUT</h4>
+          <p id="profileBio" style="margin:0;font-size:13px;color:#c9c9c9;line-height:1.5"></p>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <h4 style="margin:0 0 8px 0;color:var(--accent);font-size:12px">INTERESTS</h4>
+          <div id="profileInterests" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <h4 style="margin:0 0 8px 0;color:var(--accent);font-size:12px">TRAVEL STYLE</h4>
+          <div id="profileTravelStyle" style="color:#c9c9c9;font-size:13px"></div>
+        </div>
+        
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="messageBuddy()" style="flex:1;background:var(--luxury-gold);color:#0f0f0f;font-weight:500">💬 Message</button>
+          <button class="btn" onclick="addBuddy()" style="flex:1">➕ Add Buddy</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  // ── MAP (Leaflet fallback — no API key required) ──
-  window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      const loadEl = $('map-loading'), mapEl = $('map');
-      if (!window.L) { if(loadEl) loadEl.textContent = 'Map unavailable.'; return; }
-      loadEl.style.display = 'none'; mapEl.style.display = 'block';
-      try {
-        const map = L.map('map').setView([20.5937, 78.9629], 5);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
-        window._leafletMap = map;
-        window._leafletMarker = L.marker([20.5937, 78.9629]).addTo(map).bindPopup('India 🇮🇳').openPopup();
-      } catch(err) { if(loadEl) { loadEl.style.display='block'; loadEl.textContent='Map failed to load.'; } }
-    }, 500);
-  });
-  function searchPlace() {
-    const q = $('map-search').value.trim();
-    if (!q) return showToast('Enter a place to search');
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`)
-      .then(r => r.json())
-      .then(res => {
-        if (!res?.[0]) return showToast('Place not found');
-        const { lat, lon, display_name } = res[0];
-        const map = window._leafletMap;
-        if (window._leafletMarker) window._leafletMarker.remove();
-        window._leafletMarker = L.marker([lat, lon]).addTo(map).bindPopup(display_name).openPopup();
-        map.setView([lat, lon], 12);
-      }).catch(() => showToast('Search failed — check your connection'));
-  }
-
-  // ── LIVE STATS ──
-  setInterval(() => {
-    const vc = $('visitorCount'), bc = $('bookingCount'), fc = $('flightCount');
-    let v = parseInt(vc.textContent.replace(',',''));
-    let b = parseInt(bc.textContent), f = parseInt(fc.textContent);
-    v = Math.max(1000, Math.min(2000, v + Math.floor(Math.random()*3)-1));
-    b = Math.max(50,  Math.min(150,  b + (Math.random()>.7?1:0)));
-    f = Math.max(100, Math.min(300,  f + (Math.random()>.8?1:0)));
-    vc.textContent = v.toLocaleString(); bc.textContent = b; fc.textContent = f;
-  }, 8000);
-
-  // ── INIT ──
-  window.addEventListener('DOMContentLoaded', () => {
-    compareCost();
-    updateItinerary();
-    updateCarousel();
-  });
-</script>
+  <script src="app.js"></script>
 </body>
 </html>
