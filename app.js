@@ -843,12 +843,7 @@
       }, {passive:false});
     })();
 
-    // Add loading animation to body
-    document.body.style.opacity = '0';
-    document.body.style.transition = 'opacity 0.5s ease';
-    window.addEventListener('load', () => {
-      document.body.style.opacity = '1';
-    });
+    // Body fade-in on load (opacity starts at 1 via CSS, no JS override needed)
 
     // Enhanced cursor effects
     let cursorTrails = [];
@@ -938,16 +933,19 @@
       document.body.style.cursor = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5L21 16z' fill='%2300d4ff'/%3E%3C/svg%3E\"), auto";
     });
 
-    // Loading Screen Functionality
-    window.addEventListener('load', () => {
+    // Loading Screen Functionality — hide after 1.5s regardless of load state
+    function hideLoadingScreen() {
       const loadingScreen = document.getElementById('loadingScreen');
-      setTimeout(() => {
-        loadingScreen.classList.add('hide');
-        setTimeout(() => {
-          loadingScreen.style.display = 'none';
-        }, 500);
-      }, 3000); // Show loading screen for at least 3 seconds
-    });
+      if (!loadingScreen) return;
+      loadingScreen.classList.add('hide');
+      setTimeout(() => { loadingScreen.style.display = 'none'; }, 500);
+    }
+    setTimeout(hideLoadingScreen, 1500);
+    if (document.readyState === 'complete') {
+      hideLoadingScreen();
+    } else {
+      window.addEventListener('load', hideLoadingScreen);
+    }
 
     // Advanced Features Functions
 
