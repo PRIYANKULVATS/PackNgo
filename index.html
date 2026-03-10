@@ -1,0 +1,3268 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PackNgo — Travel Reimagined</title>
+  <meta name="description" content="PackNgo — AI-powered travel platform: flights + hotels, tours, AR/VR reviews, safety & more." />
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap"></script>
+  <!-- Leaflet fallback (used when Google Maps API key is missing or blocked) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <style>
+    
+    :root{
+      --bg:#001f3f; --card:#00294d; --accent:#1e90ff; --secondary:#3a6ea5; --tertiary:#2a5d8f;
+      --glass: rgba(255,255,255,0.04); --soft:# a0c4ff; --glass-2: rgba(255,255,255,0.03);
+      --luxury-gold:#1e90ff; --luxury-purple:#1f1f1f; --luxury-emerald:#2a5d8f;
+      font-family: 'Playfair Display', 'Garamond', 'Times New Roman', serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;color:#e8e8e8;background:#0f0f0f;font-weight:300;letter-spacing:0.5px}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    .container{max-width:1200px;margin:0 auto;padding:32px}
+
+    
+    header{position:fixed;left:0;right:0;top:0;backdrop-filter: blur(6px);background:rgba(15,15,15,0.95);border-bottom:1px solid rgba(30,144,255,0.1);z-index:60}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 24px}
+    .logo{display:flex;gap:12px;align-items:center;font-weight:700}
+    .logo .mark{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:var(--luxury-gold);box-shadow:0 6px 20px rgba(30,144,255,0.15)}
+    nav ul{display:flex;gap:18px;list-style:none;align-items:center}
+    nav li{padding:8px 12px;border-radius:8px}
+    nav li:hover{background:rgba(255,255,255,0.02)}
+    .cta{background:var(--luxury-gold);padding:8px 14px;border-radius:10px;color:#0f0f0f;box-shadow:0 8px 30px rgba(30,144,255,0.15);font-weight:500}
+
+    /* mobile nav toggle */
+    #navToggle{display:none;background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--soft);cursor:pointer}
+    nav ul.open{display:flex;flex-direction:column;position:absolute;right:24px;top:64px;background:linear-gradient(180deg, rgba(2,6,9,0.85), rgba(2,6,9,0.95));padding:12px;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+
+    
+    .hero{min-height:92vh;display:grid;align-items:center;grid-template-columns:1fr 480px;padding-top:90px;position:relative}
+    .hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.2);z-index:1}
+    .hero > *{position:relative;z-index:2}
+    .hero-left{padding:48px}
+    .eyebrow{display:inline-block;background:linear-gradient(90deg,#0e3f55,#003a5f);padding:6px 10px;border-radius:999px;font-weight:600;color:var(--soft);font-size:13px}
+    h1{font-size:48px;line-height:1.1;margin:18px 0;color:#ffffff;letter-spacing:1px;font-weight:400}
+    p.lead{color:#c9c9c9;font-size:16px;margin-bottom:20px;font-weight:300;line-height:1.6}
+    .hero-actions{display:flex;gap:12px;margin-top:18px}
+    .glass-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:16px;padding:18px;border:1px solid rgba(30,144,255,0.1)}
+
+    .bg-section{position:relative}
+    .bg-section > *{position:relative;z-index:1}
+    
+    .booking{display:flex;flex-direction:column;gap:10px}
+    .booking input,.booking select{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:10px;border-radius:10px;color:inherit}
+    .row{display:flex;gap:8px}
+    .btn{padding:10px 14px;border-radius:10px;border:1px solid rgba(30,144,255,0.3);cursor:pointer;background:transparent;color:#e8e8e8;font-weight:500;transition:all 0.4s ease;text-transform:uppercase;font-size:12px;letter-spacing:1px}
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-50px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(50px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes zoomIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes bgMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 10px rgba(255,215,0,0.2), inset 0 0 10px rgba(255,215,0,0.1); }
+      50% { box-shadow: 0 0 20px rgba(209, 218, 224, 0.4), inset 0 0 20px rgba(255,215,0,0.2); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes rotateIn {
+      from { opacity: 0; transform: rotate(-10deg) scale(0.9); }
+      to { opacity: 1; transform: rotate(0) scale(1); }
+    }
+    @keyframes expandWidth {
+      from { width: 0; opacity: 0; }
+      to { width: 100%; opacity: 1; }
+    }
+    @keyframes flip {
+      0% { transform: perspective(1000px) rotateY(0); }
+      100% { transform: perspective(1000px) rotateY(360deg); }
+    }
+
+    /* Apply animations */
+    .hero { animation: fadeIn 1.5s ease-out; }
+    .hero-left { animation: slideInLeft 1s ease-out 0.3s both; }
+    .hero-right { animation: slideInRight 1s ease-out 0.6s both; }
+    section { animation: fadeInUp 1s ease-out both; }
+    section:nth-child(odd) { animation-delay: 0.2s; }
+    section:nth-child(even) { animation-delay: 0.4s; }
+    .card { animation: zoomIn 0.8s ease-out both; }
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+    .card:nth-child(4) { animation-delay: 0.4s; }
+    .bg-section { animation: bgMove 20s ease-in-out infinite; }
+    
+    /* Special animations */
+    .btn.primary { animation: pulse 2s ease-in-out infinite; }
+    
+    /* Hover animations */
+    .card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .card:hover { 
+      transform: translateY(-12px) scale(1.02); 
+      box-shadow: 0 20px 40px rgba(217, 228, 233, 0.2);
+      animation: glow 1.5s ease-in-out infinite;
+    }
+    .interactive-card { transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .interactive-card:hover { 
+      transform: translateY(-10px) rotateX(3deg) rotateZ(1deg); 
+      box-shadow: 0 25px 50px rgba(0,139,139,0.3);
+    }
+    .bg-section:hover { animation-duration: 10s; }
+    .hero:hover { transform: scale(1.01); transition: transform 0.5s ease; }
+    .btn { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .btn:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 8px 20px rgba(30,144,255,0.2);
+      background:rgba(30,144,255,0.1);
+      border-color:rgba(30,144,255,0.6);
+    }
+    .btn:active { transform: scale(0.98); }
+    h2 { 
+      font-size: 36px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      margin-bottom: 24px;
+      color: #ffffff;
+      transition: all 0.3s ease; 
+      will-change: color;
+    }
+    h2:hover { 
+      color: var(--accent);
+    }
+    
+    /* Navigation smooth transitions */
+    nav li { transition: all 0.3s ease; }
+    nav li:hover { 
+      background: rgba(255,215,0,0.1);
+      transform: translateY(-2px);
+    }
+    nav a { transition: color 0.3s ease; }
+    nav a:hover { color: var(--accent); }
+    
+    /* Icon animations */
+    .icon { animation: float 3s ease-in-out infinite; font-size: 2em; transition: all 0.3s ease; }
+    .icon:hover { filter: drop-shadow(0 0 8px rgba(191, 233, 244, 0.5)); }
+    .icon:nth-child(1) { animation-delay: 0s; }
+    .icon:nth-child(2) { animation-delay: 0.5s; }
+    .icon:nth-child(3) { animation-delay: 1s; }
+    .icon:nth-child(4) { animation-delay: 1.5s; }
+    
+    /* Interactive widgets */
+    .interactive-widget { cursor: pointer; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .interactive-widget:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 0 15px 35px rgba(0,212,255,0.3);
+    }
+    .interactive-widget:active { 
+      transform: translateY(0); 
+      box-shadow: 0 2px 8px rgba(0,212,255,0.2);
+    }
+    
+    /* Input focus animations */
+    input, select, textarea {
+      transition: all 0.3s ease;
+      border-radius: 8px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      box-shadow: 0 0 20px rgba(177, 214, 236, 0.3);
+      border-color: var(--accent);
+      transform: scale(1.01);
+    }
+    
+    /* Chat widget */
+    #chatToggle { 
+      transition: all 0.3s ease;
+      animation: bounce 2s ease-in-out infinite;
+    }
+    #chatToggle:hover { 
+      transform: scale(1.15) rotate(10deg);
+      animation: none;
+    }
+    #chatWindow { animation: slideDown 0.4s ease-out; }
+    #chatWindow input:focus { 
+      outline: none; 
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(255,215,0,0.2);
+    }
+    
+    /* Header animation */
+    header { transition: all 0.3s ease; }
+    header:hover { background: linear-gradient(90deg, rgba(4,14,22,0.7), rgba(6,18,30,0.3)); }
+    
+    /* Custom cursor element */
+    body, html { cursor: none; }
+
+    #customCursor {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      background: var(--luxury-gold);
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      animation: pulse 1.5s ease-in-out infinite;
+      transition: transform 0.2s ease;
+    }
+    #customCursor.click { animation: none; transform: translate(-50%, -50%) scale(0.8); }
+    
+    /* Modal smooth animations */
+    .modal { 
+      transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0.4s ease;
+    }
+    .modal.open { animation: fadeIn 0.5s ease-out; }
+    .modal-card { animation: rotateIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    
+    /* Loading screen smooth animations */
+    .loading-screen { transition: opacity 0.6s ease-out, visibility 0.6s ease-out; }
+    .loading-text { animation: shimmer 2s infinite; background-size: 1000px 100%; }
+    
+    .hero { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' fill='%231e90ff'/%3E%3C/svg%3E"), default; }
+    
+    /* Special cursors for specific elements */
+    #notificationBtn { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' fill='%231e90ff'/%3E%3C/svg%3E"), pointer; }
+    
+    .bg-section { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' fill='%231e90ff'/%3E%3C/svg%3E"), default; }
+    
+    /* Cursor animations */
+    @keyframes cursorPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+    
+    @keyframes cursorGlow {
+      0%, 100% { filter: drop-shadow(0 0 2px rgba(37, 124, 141, 0.3)); }
+      50% { filter: drop-shadow(0 0 8px rgba(115, 209, 228, 0.8)); }
+    }
+    
+    /* Cursor trail effect */
+    .cursor-trail {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      background: radial-gradient(circle, var(--accent), transparent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      animation: cursorTrail 0.5s ease-out forwards;
+    }
+    
+    @keyframes cursorTrail {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0); }
+    }
+    
+    /* Image animations */
+    .bg-section::before { transition: opacity 0.5s ease; }
+    .bg-section:hover::before { opacity: 0.3; }
+    
+    .hero-right{padding:28px;display:flex;flex-direction:column;gap:16px}
+    .showcase{background:linear-gradient(180deg,#082233,#0c2e45);padding:18px;border-radius:14px;box-shadow:0 10px 40px rgba(2,20,32,0.6)}
+    .show-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .tiny{font-size:12px;color:var(--soft)}
+
+    
+    section{padding:72px 0}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+    .card{background:#1a1a1a;padding:18px;border-radius:14px;border:1px solid rgba(30,144,255,0.08);transition:all 0.4s ease;will-change:transform}
+
+    
+    .features{display:grid;grid-template-columns:2fr 1fr;gap:22px;align-items:center}
+    .feature-list{display:grid;gap:14px}
+    .feature-item{display:flex;gap:12px;align-items:center}
+    .icon{width:54px;height:54px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#092f3f, #054c63)}
+
+    
+    .float{animation:float 6s ease-in-out infinite}
+    @keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-12px)}100%{transform:translateY(0)}}
+
+    
+    .reviews{display:flex;gap:14px;overflow:hidden}
+    .review{min-width:320px}
+
+   
+    footer{padding:36px 0;background:transparent}
+
+    /* Loading Screen Styles */
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+    }
+    .loading-screen.hide {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .loading-content {
+      text-align: center;
+      color: white;
+    }
+    .traveling-bag {
+      animation: bagBounce 2s ease-in-out infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes bagBounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-20px); }
+      60% { transform: translateY(-10px); }
+    }
+    .loading-text {
+      font-size: 48px;
+      font-weight: bold;
+      background: linear-gradient(45deg, var(--luxury-gold), white, var(--luxury-gold));
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: textShimmer 2s ease-in-out infinite;
+      margin-bottom: 10px;
+    }
+    @keyframes textShimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .loading-subtitle {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 30px;
+      animation: fadeIn 1s ease-in-out;
+    }
+    .loading-progress {
+      width: 200px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 0 auto;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--luxury-gold), var(--luxury-emerald));
+      border-radius: 2px;
+      animation: progressFill 3s ease-in-out;
+    }
+    @keyframes progressFill {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+
+    /* Advanced Features Styles */
+    @keyframes panorama {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 400% 50%; }
+    }
+    @keyframes safetyPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0, 139, 139, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(0, 139, 139, 0); }
+    }
+    @keyframes crowdAlert {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    /* Full Page Background Effects */
+    html { background-attachment: fixed; }
+    body {
+      background-attachment: fixed;
+      background-blend-mode: overlay;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.02) 0%, rgba(139, 134, 128, 0.02) 100%);
+      background-size: 400% 400%;
+      animation: backgroundShift 30s ease-in-out infinite;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    @keyframes backgroundShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* Mobile Background Adjustments */
+    @media(max-width:768px) {
+      html, body {
+        background-attachment: scroll;
+      }
+      body::before {
+        animation-duration: 30s;
+      }
+    }
+    .safety-alert { animation: safetyPulse 2s infinite; }
+    .crowd-high { animation: crowdAlert 1s infinite; }
+
+    /* Advanced Features Mobile Responsive */
+    @media(max-width:768px){
+      #advanced-features .cards {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      #advanced-features .card {
+        padding: 16px;
+      }
+      #vrScene {
+        height: 100px !important;
+      }
+    }
+
+    @media(max-width:980px){
+      .hero{grid-template-columns:1fr;gap:20px}
+      nav ul{display:none}
+      #navToggle{display:inline-flex}
+    }
+
+    
+    .fade-up{animation:fadeUp 900ms cubic-bezier(.2,.9,.2,1) both}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+    
+    .modal{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(180deg, rgba(2,6,9,0.6), rgba(2,6,9,0.8));z-index:120;opacity:0;pointer-events:none;transition:200ms}
+    .modal.open{opacity:1;pointer-events:auto}
+    .modal-card{width:420px;max-width:94%;background:linear-gradient(180deg,#03202a,#072835);padding:20px;border-radius:14px;border:1px solid rgba(255,255,255,0.04)}
+
+    
+    .input{width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    .toast{position:fixed;right:20px;bottom:20px;background:linear-gradient(90deg,var(--luxury-gold),var(--luxury-purple));color:#012;padding:12px 16px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.4);opacity:0;transform:translateY(8px);transition:200ms;z-index:200}
+    .toast.show{opacity:1;transform:none}
+
+    /* interactive service cards */
+    .service-card{transition:all 300ms ease;transform:scale(1);cursor:pointer}
+    .service-card:hover{transform:scale(1.05);box-shadow:0 12px 40px rgba(0,212,255,0.15)}
+    .service-card.expanded{background:linear-gradient(180deg,#0f3a4f,#092f3f);border:1px solid rgba(0,212,255,0.2)}
+    .service-details{max-height:0;overflow:hidden;transition:max-height 400ms ease;margin-top:0}
+    .service-details.show{max-height:200px;margin-top:12px}
+    .service-btn{display:inline-block;background:rgba(0,212,255,0.1);border:1px solid var(--accent);color:var(--accent);padding:6px 10px;border-radius:6px;font-size:11px;margin-right:6px;margin-top:8px;cursor:pointer;transition:200ms}
+    .service-btn:hover{background:rgba(0,212,255,0.2);transform:translateY(-1px)}
+
+    /* 3D Login Modal Styles */
+    #modalLogin {
+      perspective: 1200px;
+      background: linear-gradient(180deg, rgba(2,6,9,0.7), rgba(2,6,9,0.9));
+    }
+    #modalLogin .modal-card {
+      position: relative;
+      width: 380px;
+      max-width: 95%;
+      min-height: 260px;
+      background: linear-gradient(135deg, rgba(30,60,90,0.7), rgba(0,212,255,0.12));
+      border-radius: 18px;
+      box-shadow: 0 16px 60px rgba(0,212,255,0.18), 0 2px 16px rgba(0,0,0,0.12);
+      border: 1.5px solid rgba(0,212,255,0.18);
+      transform-style: preserve-3d;
+      animation: loginPop 1s cubic-bezier(.2,.9,.2,1);
+      overflow: hidden;
+    }
+    @keyframes loginPop {
+      0% {transform: rotateY(30deg) scale(0.7); opacity: 0;}
+      60% {transform: rotateY(-10deg) scale(1.05); opacity: 1;}
+      100% {transform: rotateY(0deg) scale(1); opacity: 1;}
+    }
+    #modalLogin .modal-card:active {
+      animation: loginPop 0.6s reverse;
+    }
+    #modalLogin .modal-card .login-3d-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 0 8px 0;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 2px 12px #00d4ff44;
+    }
+    #modalLogin .modal-card .login-3d-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--luxury-purple));
+      box-shadow: 0 8px 24px rgba(0,212,255,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px auto;
+      font-size: 28px;
+      color: #012;
+    }
+    #modalLogin .modal-card .login-3d-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 0 18px 18px 18px;
+    }
+    #modalLogin .modal-card .input {
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(0,212,255,0.18);
+      box-shadow: 0 2px 8px rgba(0,212,255,0.08);
+      color: #eaf6ff;
+      font-size: 15px;
+      transition: box-shadow 300ms, border 300ms;
+    }
+    #modalLogin .modal-card .input:focus {
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 4px 16px #00d4ff33;
+      background: rgba(255,255,255,0.16);
+    }
+    #modalLogin .modal-card .login-3d-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    #modalLogin .modal-card .btn {
+      background: linear-gradient(90deg,var(--accent),var(--luxury-purple));
+      color: #012;
+      font-weight: 600;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,212,255,0.06);
+      transition: transform 200ms;
+    }
+    #modalLogin .modal-card .btn:active {
+      transform: scale(0.97);
+    }
+    #modalLogin .modal-card .login-3d-footer {
+      text-align: center;
+      color: var(--soft);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    #modalLogin .modal-card .login-3d-social {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    #modalLogin .modal-card .login-3d-social button {
+      background: rgba(0,212,255,0.12);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      color: var(--accent);
+      box-shadow: 0 2px 8px #00d4ff22;
+      cursor: pointer;
+      transition: background 200ms, transform 200ms;
+    }
+    #modalLogin .modal-card .login-3d-social button:hover {
+      background: var(--accent);
+      color: #012;
+      transform: scale(1.1);
+    }
+
+    /* Social logos for login */
+    .login-logo {
+      width: 22px;
+      height: 22px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    
+    .modal{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(180deg, rgba(15,15,15,0.8), rgba(15,15,15,0.95));z-index:120;opacity:0;pointer-events:none;transition:200ms}
+    .modal.open{opacity:1;pointer-events:auto}
+    .modal-card{width:420px;max-width:94%;background:linear-gradient(180deg,#1a1a1a,#252525);padding:20px;border-radius:14px;border:1px solid rgba(30,144,255,0.15)}
+
+    
+    .input{width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    .toast{position:fixed;right:20px;bottom:20px;background:linear-gradient(90deg,var(--luxury-gold),var(--luxury-purple));color:#012;padding:12px 16px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.4);opacity:0;transform:translateY(8px);transition:200ms;z-index:200}
+    .toast.show{opacity:1;transform:none}
+
+    /* interactive service cards */
+    .service-card{transition:all 300ms ease;transform:scale(1);cursor:pointer}
+    .service-card:hover{transform:scale(1.05);box-shadow:0 12px 40px rgba(0,212,255,0.15)}
+    .service-card.expanded{background:linear-gradient(180deg,#0f3a4f,#092f3f);border:1px solid rgba(0,212,255,0.2)}
+    .service-details{max-height:0;overflow:hidden;transition:max-height 400ms ease;margin-top:0}
+    .service-details.show{max-height:200px;margin-top:12px}
+    .service-btn{display:inline-block;background:rgba(0,212,255,0.1);border:1px solid var(--accent);color:var(--accent);padding:6px 10px;border-radius:6px;font-size:11px;margin-right:6px;margin-top:8px;cursor:pointer;transition:200ms}
+    .service-btn:hover{background:rgba(0,212,255,0.2);transform:translateY(-1px)}
+
+    /* 3D Login Modal Styles */
+    #modalLogin {
+      perspective: 1200px;
+      background: linear-gradient(180deg, rgba(2,6,9,0.7), rgba(2,6,9,0.9));
+    }
+    #modalLogin .modal-card {
+      position: relative;
+      width: 380px;
+      max-width: 95%;
+      min-height: 260px;
+      background: linear-gradient(135deg, rgba(30,60,90,0.7), rgba(0,212,255,0.12));
+      border-radius: 18px;
+      box-shadow: 0 16px 60px rgba(0,212,255,0.18), 0 2px 16px rgba(0,0,0,0.12);
+      border: 1.5px solid rgba(0,212,255,0.18);
+      transform-style: preserve-3d;
+      animation: loginPop 1s cubic-bezier(.2,.9,.2,1);
+      overflow: hidden;
+    }
+    @keyframes loginPop {
+      0% {transform: rotateY(30deg) scale(0.7); opacity: 0;}
+      60% {transform: rotateY(-10deg) scale(1.05); opacity: 1;}
+      100% {transform: rotateY(0deg) scale(1); opacity: 1;}
+    }
+    #modalLogin .modal-card:active {
+      animation: loginPop 0.6s reverse;
+    }
+    #modalLogin .modal-card .login-3d-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 0 8px 0;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 2px 12px #00d4ff44;
+    }
+    #modalLogin .modal-card .login-3d-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--luxury-purple));
+      box-shadow: 0 8px 24px rgba(0,212,255,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px auto;
+      font-size: 28px;
+      color: #012;
+    }
+    #modalLogin .modal-card .login-3d-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 0 18px 18px 18px;
+    }
+    #modalLogin .modal-card .input {
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(0,212,255,0.18);
+      box-shadow: 0 2px 8px rgba(0,212,255,0.08);
+      color: #eaf6ff;
+      font-size: 15px;
+      transition: box-shadow 300ms, border 300ms;
+    }
+    #modalLogin .modal-card .input:focus {
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 4px 16px #00d4ff33;
+      background: rgba(255,255,255,0.16);
+    }
+    #modalLogin .modal-card .login-3d-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    #modalLogin .modal-card .btn {
+      background: linear-gradient(90deg,var(--accent),var(--luxury-purple));
+      color: #012;
+      font-weight: 600;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,212,255,0.06);
+      transition: transform 200ms;
+    }
+    #modalLogin .modal-card .btn:active {
+      transform: scale(0.97);
+    }
+    #modalLogin .modal-card .login-3d-footer {
+      text-align: center;
+      color: var(--soft);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    #modalLogin .modal-card .login-3d-social {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    #modalLogin .modal-card .login-3d-social button {
+      background: rgba(0,212,255,0.12);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      color: var(--accent);
+      box-shadow: 0 2px 8px #00d4ff22;
+      cursor: pointer;
+      transition: background 200ms, transform 200ms;
+    }
+    #modalLogin .modal-card .login-3d-social button:hover {
+      background: var(--accent);
+      color: #012;
+      transform: scale(1.1);
+    }
+
+    
+    /* 3D Sign Up Modal */
+    #modalSignup {
+      perspective: 1200px;
+      background: linear-gradient(180deg, rgba(2,6,9,0.7), rgba(2,6,9,0.9));
+    }
+    #modalSignup .modal-card {
+      position: relative;
+      width: 380px;
+      max-width: 95%;
+      min-height: 260px;
+      background: linear-gradient(135deg, rgba(30,60,90,0.7), rgba(0,212,255,0.12));
+      border-radius: 18px;
+      box-shadow: 0 16px 60px rgba(0,212,255,0.18), 0 2px 16px rgba(0,0,0,0.12);
+      border: 1.5px solid rgba(0,212,255,0.18);
+      transform-style: preserve-3d;
+      animation: signupPop 1s cubic-bezier(.2,.9,.2,1);
+      overflow: hidden;
+    }
+    @keyframes signupPop {
+      0% {transform: rotateY(30deg) scale(0.7); opacity: 0;}
+      60% {transform: rotateY(-10deg) scale(1.05); opacity: 1;}
+      100% {transform: rotateY(0deg) scale(1); opacity: 1;}
+    }
+    #modalSignup .modal-card:active {
+      animation: signupPop 0.6s reverse;
+    }
+    #modalSignup .modal-card .login-3d-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 0 8px 0;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 2px 12px #00d4ff44;
+    }
+    #modalSignup .modal-card .login-3d-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--luxury-purple));
+      box-shadow: 0 8px 24px rgba(0,212,255,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px auto;
+      font-size: 28px;
+      color: #012;
+    }
+    #modalSignup .modal-card .login-3d-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 0 18px 18px 18px;
+    }
+    #modalSignup .modal-card .input {
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(0,212,255,0.18);
+      box-shadow: 0 2px 8px rgba(0,212,255,0.08);
+      color: #eaf6ff;
+      font-size: 15px;
+      transition: box-shadow 300ms, border 300ms;
+    }
+    #modalSignup .modal-card .input:focus {
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 4px 16px #00d4ff33;
+      background: rgba(255,255,255,0.16);
+    }
+    #modalSignup .modal-card .login-3d-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    #modalSignup .modal-card .btn {
+      background: linear-gradient(90deg,var(--accent),var(--luxury-purple));
+      color: #012;
+      font-weight: 600;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,212,255,0.06);
+      transition: transform 200ms;
+    }
+    #modalSignup .modal-card .btn:active {
+      transform: scale(0.97);
+    }
+    #modalSignup .modal-card .login-3d-footer {
+      text-align: center;
+      color: var(--soft);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    /* 3D Forgot Password Modal */
+    #modalForgot {
+      perspective: 1200px;
+      background: linear-gradient(180deg, rgba(2,6,9,0.7), rgba(2,6,9,0.9));
+    }
+    #modalForgot .modal-card {
+      position: relative;
+      width: 380px;
+      max-width: 95%;
+      min-height: 260px;
+      background: linear-gradient(135deg, rgba(30,60,90,0.7), rgba(0,212,255,0.12));
+      border-radius: 18px;
+      box-shadow: 0 16px 60px rgba(0,212,255,0.18), 0 2px 16px rgba(0,0,0,0.12);
+      border: 1.5px solid rgba(0,212,255,0.18);
+      transform-style: preserve-3d;
+      animation: forgotPop 1s cubic-bezier(.2,.9,.2,1);
+      overflow: hidden;
+    }
+    @keyframes forgotPop {
+      0% {transform: rotateY(30deg) scale(0.7); opacity: 0;}
+      60% {transform: rotateY(-10deg) scale(1.05); opacity: 1;}
+      100% {transform: rotateY(0deg) scale(1); opacity: 1;}
+    }
+    #modalForgot .modal-card:active {
+      animation: forgotPop 0.6s reverse;
+    }
+    #modalForgot .modal-card .login-3d-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 0 8px 0;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 2px 12px #00d4ff44;
+    }
+    #modalForgot .modal-card .login-3d-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--luxury-purple));
+      box-shadow: 0 8px 24px rgba(0,212,255,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px auto;
+      font-size: 28px;
+      color: #012;
+    }
+    #modalForgot .modal-card .login-3d-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 0 18px 18px 18px;
+    }
+    #modalForgot .modal-card .input {
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(0,212,255,0.18);
+      box-shadow: 0 2px 8px rgba(0,212,255,0.08);
+      color: #eaf6ff;
+      font-size: 15px;
+      transition: box-shadow 300ms, border 300ms;
+    }
+    #modalForgot .modal-card .input:focus {
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 4px 16px #00d4ff33;
+      background: rgba(255,255,255,0.16);
+    }
+    #modalForgot .modal-card .login-3d-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    #modalForgot .modal-card .btn {
+      background: linear-gradient(90deg,var(--accent),var(--luxury-purple));
+      color: #012;
+      font-weight: 600;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,212,255,0.06);
+      transition: transform 200ms;
+    }
+    #modalForgot .modal-card .btn:active {
+      transform: scale(0.97);
+    }
+    #modalForgot .modal-card .login-3d-footer {
+      text-align: center;
+      color: var(--soft);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-content">
+      <div class="traveling-bag">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M9 6h6M9 6v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V6" stroke="var(--luxury-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 10v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10M3 10h18M3 10l2-6h14l2 6" stroke="var(--luxury-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 14v4M12 14v4M16 14v4" stroke="var(--luxury-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="loading-text">PackNgo</div>
+      <div class="loading-subtitle">Travel Reimagined</div>
+      <div class="loading-progress">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <div class="container nav">
+      <div class="logo">
+        <div class="mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12h18M12 3v18" stroke="#021" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div>
+          <div style="font-size:18px">Pack<span style="color:var(--accent)">Ngo</span></div>
+          <div style="font-size:11px;color:var(--soft);margin-top:2px">Travel reimagined</div>
+        </div>
+      </div>
+      <button id="navToggle" aria-controls="mainNav" aria-expanded="false">☰</button>
+      <nav>
+        <ul id="mainNav">
+          <li><a href="#home">Home</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#services">Services</a></li>
+          <li><a href="#advanced-features">AI Features</a></li>
+          <li><a href="#pages">Pages</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="#book" class="cta">Book a Rental</a></li>
+          <li><button id="notificationBtn" onclick="toggleNotifications()" style="background:none;border:none;color:#ccc;font-size:18px;cursor:pointer;margin-right:8px">🔔<span id="notificationBadge" style="display:none;background:#ff4757;color:white;border-radius:50%;padding:2px 6px;font-size:10px;margin-left:4px">3</span></button></li>
+          <li><a href="#" id="openLogin">Login</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  
+  <main class="container" id="home">
+    <div class="hero">
+      <div class="hero-left">
+        <span class="eyebrow">AI-powered • AR/VR • Safety-first</span>
+        <h1 id="hero-title" class="fade-up"></h1>
+        <p class="lead">From flight + hotel combos to AR/VR reviews, safety tracking and a social travel buddy — PackNgo brings everything into one mind-blowing platform.</p>
+
+        <div class="hero-actions">
+          <button class="btn primary" onclick="scrollToBook(); demoStartBooking()">Start Booking</button>
+          <button class="btn" onclick="openItineraryBuilder()">Build Itinerary</button>
+          <button class="btn" id="openAgent">Try AI Travel Agent</button>
+        </div>
+
+        <div style="margin-top:20px" class="glass-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:10px;color:var(--soft)">Live cost comparison</div>
+              <div style="font-weight:400;font-size:18px">Best route: <span id="bestRoute">Delhi → Goa</span></div>
+            </div>
+            <div style="text-align:right;font-size:12px;color:var(--soft)">Estimated: <strong id="estCost">₹5,199</strong></div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+            <input class="input" id="cmpFrom" list="cityList" placeholder="From (city)" />
+            <input class="input" id="cmpTo" list="cityList" placeholder="To (city)" />
+            <button class="btn" onclick="compareCost()">Compare</button>
+          </div>
+          <datalist id="cityList">
+            <option>Delhi</option>
+            <option>Mumbai</option>
+            <option>Bangalore</option>
+            <option>Goa</option>
+            <option>Manali</option>
+            <option>Kerala</option>
+            <option>Jaipur</option>
+            <option>Hyderabad</option>
+            <option>Kolkata</option>
+            <option>Pune</option>
+          </datalist>
+        </div>
+
+        <!-- Interactive Widgets -->
+        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="glass-card interactive-widget" onclick="toggleWeather()">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:20px">🌤️</span>
+              <div>
+                <div style="font-size:12px;color:var(--soft)">Weather</div>
+                <div style="font-weight:600" id="weatherCity">Delhi</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;text-align:right">
+              <span style="font-size:18px;font-weight:700" id="weatherTemp">28°C</span>
+            </div>
+          </div>
+          
+          <div class="glass-card interactive-widget" onclick="toggleCurrency()">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:20px">💱</span>
+              <div>
+                <div style="font-size:12px;color:var(--soft)">Currency</div>
+                <div style="font-weight:600">USD → INR</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;text-align:right">
+              <span style="font-size:14px" id="currencyRate">1 USD = 83.5 INR</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Stats -->
+        <div style="margin-top:12px" class="glass-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:700;color:var(--accent)" id="visitorCount">1,247</div>
+                <div style="font-size:10px;color:var(--soft)">Active Users</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:700;color:#00d4ff" id="bookingCount">89</div>
+                <div style="font-size:10px;color:var(--soft)">Bookings Today</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:700;color:#ff6b6b" id="flightCount">156</div>
+                <div style="font-size:10px;color:var(--soft)">Flights Tracked</div>
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--soft)">Live Stats</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="hero-right">
+        <div class="showcase float glass-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div><strong>Flight + Hotel</strong><div class="tiny">Smart combos, flexible dates</div></div>
+            <div class="tiny">SafeScore: <strong id="safeScore">8.6</strong></div>
+          </div>
+          <div class="show-grid">
+            <div class="card">
+              <div style="font-size:13px;color:var(--soft)">Next promo</div>
+              <div style="font-weight:700;margin-top:6px">Summer Saver — Up to 30% off</div>
+            </div>
+            <div class="card">
+              <div style="font-size:13px;color:var(--soft)">Top package</div>
+              <div style="font-weight:700;margin-top:6px">Himalayan Serenity — 5 days</div>
+            </div>
+            <div class="card">
+              <div style="font-size:13px;color:var(--soft)">Vlogs</div>
+              <div style="font-weight:700;margin-top:6px">City Street Foods — 12 videos</div>
+            </div>
+            <div class="card">
+              <div style="font-size:13px;color:var(--soft)">Cost comparison</div>
+              <div style="font-weight:700;margin-top:6px">Multi-Carrier analysis</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="showcase glass-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><strong>Quick Explore</strong><div class="tiny">Popular this week</div></div>
+            <div class="tiny">Reviews</div>
+          </div>
+          <div style="margin-top:10px" class="cards">
+            <div class="card">Goa: Beaches & Nightlife</div>
+            <div class="card">Manali: Adventure Trails</div>
+            <div class="card">Rajasthan: Heritage Loop</div>
+            <div class="card">Kerala: Backwaters</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+    <section id="about" class="bg-section" style="padding:40px 0;margin:20px 0">
+      <h2 style="cursor:pointer;transition:200ms" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='inherit'" onclick="toggleAboutExpand()">About PackNgo</h2>
+      <div class="cards" style="margin-top:12px">
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="toggleAboutDetail(0)">
+          <h3>About PackNgo 🚀</h3>
+          <p class="tiny" style="margin-top:8px">PackNgo is an integrated travel ecosystem — booking engine, AR/VR reviews, AI personal travel agent, real-time safety & crowd tracking and a social hub for solo travellers.</p>
+          <div id="about-expand-0" class="service-details" style="margin-top:0">
+            <p class="tiny" style="margin:8px 0">Founded in 2024, we're on a mission to revolutionize travel with cutting-edge AI and community-driven insights. Our team spans engineers, travel experts, and safety specialists.</p>
+            <button class="service-btn" onclick="demoTeamConnect()">Meet Team</button>
+            <button class="service-btn" onclick="demoJoinMission()">Join Mission</button>
+          </div>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="toggleAboutDetail(1)">
+          <h3>Vision & Mission 🎯</h3>
+          <p class="tiny" style="margin-top:8px">To make travel safer, more personal and smarter using ML, AR and community-driven features.</p>
+          <div id="about-expand-1" class="service-details" style="margin-top:0">
+            <p class="tiny" style="margin:8px 0"><strong>Our Promise:</strong> Every traveler deserves a confident, safe, and personalized journey. We empower you with AI insights, real-time safety data, and a global community.</p>
+            <button class="service-btn" onclick="demoMissionValues()">Our Values</button>
+            <button class="service-btn" onclick="demoRoadmap()">Roadmap 2025</button>
+          </div>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="toggleAboutDetail(2)">
+          <h3>What We Provide 💎</h3>
+          <ul style="margin-top:8px;line-height:1.8;color:var(--soft)">
+            <li>✅ AI powered personal travel agent</li>
+            <li>✅ Real time crowd & safety tracking</li>
+            <li>✅ AR + VR Travel Review</li>
+            <li>✅ A Travel Buddy (solo traveler social network)</li>
+          </ul>
+          <div id="about-expand-2" class="service-details" style="margin-top:0">
+            <ul style="margin:8px 0;color:var(--soft)">
+              <li>✅ Smart Local Translator guide</li>
+              <li>✅ Group Travel Suggestions</li>
+              <li>✅ Travel Insurance & Emergency mode</li>
+            </ul>
+            <button class="service-btn" onclick="demoFeatureDemo()">Feature Demo</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+    <section id="services" class="bg-section" style="padding:40px 0;margin:20px 0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:22px">
+        <div style="flex:1">
+          <h2>Services</h2>
+          <p class="tiny">Full-stack travel services combining booking, safety, AR/VR reviews and a community for travellers.</p>
+
+          <div style="margin-top:16px" class="feature-list">
+            <div class="feature-item card service-card" id="svc-flights" onclick="toggleService('svc-flights','flights')">
+              <div class="icon">✈️</div>
+              <div style="flex:1">
+                <strong>Flight + Hotel Booking</strong>
+                <div class="tiny">Smart combos, fare predictions, multi-city routing</div>
+                <div class="service-details" id="details-flights">
+                  <p class="tiny" style="margin:8px 0">Compare 100+ carriers and hotels instantly. Get AI-powered fare predictions and multi-city route optimization.</p>
+                  <button class="service-btn" onclick="demoFlightBooking()">Demo Booking</button>
+                  <button class="service-btn" onclick="demoPriceDrop()">Price Alert</button>
+                </div>
+              </div>
+            </div>
+            <div class="feature-item card service-card" id="svc-tours" onclick="toggleService('svc-tours','tours')">
+              <div class="icon">🧭</div>
+              <div style="flex:1">
+                <strong>Tour Packages</strong>
+                <div class="tiny">Curated packages — solo, family, adventure</div>
+                <div class="service-details" id="details-tours">
+                  <p class="tiny" style="margin:8px 0">Handpicked tour packages with verified guides. Solo, family, adventure, and luxury options available.</p>
+                  <button class="service-btn" onclick="demoTourFilter()">Filter Tours</button>
+                  <button class="service-btn" onclick="demoGuideConnect()">Connect Guide</button>
+                </div>
+              </div>
+            </div>
+            <!-- Maps service feature removed -->
+            <div class="feature-item card service-card" id="svc-compare" onclick="toggleService('svc-compare','compare')">
+              <div class="icon">🔍</div>
+              <div style="flex:1">
+                <strong>Cost Comparison</strong>
+                <div class="tiny">AI compares carriers, hotels, and rental fees</div>
+                <div class="service-details" id="details-compare">
+                  <p class="tiny" style="margin:8px 0">AI analyzes 1000+ options across all categories. Find hidden deals and save up to 40%.</p>
+                  <button class="service-btn" onclick="demoCompareNow()">Compare Now</button>
+                  <button class="service-btn" onclick="demoBestDeal()">Best Deals</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="width:380px">
+          <div class="card">
+            <h3>AR/VR Travel Reviews</h3>
+            <p class="tiny">Watch 360 reviews from travellers, preview hotels with AR, and experience tours before you go.</p>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn" onclick="demoARPreview()">Open 360 Demo</button>
+              <button class="btn" onclick="demoVlogExplore()">Explore Vlogs</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <h3>Travel Buddy</h3>
+            <p class="tiny">Find co-travelers, join micro-groups, or post a solo trip plan and get buddy requests.</p>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn" onclick="demoBuddyConnect()">Find Buddies</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Advanced Features Section -->
+    <section id="advanced-features" class="bg-section" style="padding:40px 0;margin:20px 0">
+      <h2 style="cursor:pointer;transition:200ms;text-align:center;margin-bottom:40px" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='inherit'">Advanced Travel Intelligence</h2>
+      <div class="cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px">
+
+        <!-- Real-time Crowd & Safety Tracking -->
+        <div class="card interactive-card" style="background:linear-gradient(180deg,var(--card),rgba(26,26,26,0.8));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--luxury-emerald),var(--luxury-gold));display:flex;align-items:center;justify-content:center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#012"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="color:var(--accent);margin:0;font-size:18px">Safety & Crowd Tracker</h3>
+              <div style="color:var(--soft);font-size:12px">Real-time destination intelligence</div>
+            </div>
+          </div>
+          <div id="safetyTracker" style="margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span style="color:var(--soft);font-size:14px">Current Safety Rating</span>
+              <span id="safetyRating" style="color:var(--luxury-emerald);font-weight:600">98%</span>
+            </div>
+            <div style="width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;margin-bottom:12px">
+              <div id="safetyBar" style="width:98%;height:100%;background:linear-gradient(90deg,var(--luxury-emerald),var(--luxury-gold));border-radius:3px;transition:width 0.5s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span style="color:var(--soft);font-size:14px">Crowd Level</span>
+              <span id="crowdLevel" style="color:var(--luxury-gold);font-weight:600">Low</span>
+            </div>
+            <div style="width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px">
+              <div id="crowdBar" style="width:25%;height:100%;background:linear-gradient(90deg,var(--luxury-gold),var(--luxury-purple));border-radius:3px;transition:width 0.5s"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <button class="btn" onclick="toggleSafetyAlerts(this)" style="flex:1;background:linear-gradient(90deg,var(--luxury-emerald),var(--luxury-gold));color:#012">Enable Alerts</button>
+
+          </div>
+        </div>
+
+        <!-- AR&VR Travel Preview -->
+        <div class="card interactive-card" style="background:linear-gradient(180deg,var(--card),rgba(26,26,26,0.8));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--luxury-purple),var(--luxury-emerald));display:flex;align-items:center;justify-content:center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#012"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="color:var(--accent);margin:0;font-size:18px">AR/VR Preview</h3>
+              <div style="color:var(--soft);font-size:12px">Immersive destination experience</div>
+            </div>
+          </div>
+          <div id="arvrPreview" style="margin-bottom:16px">
+            <div style="width:100%;height:120px;background:linear-gradient(135deg,var(--luxury-purple),var(--luxury-emerald));border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;position:relative;overflow:hidden">
+              <div id="vrScene" style="width:100%;height:100%;background-image:url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80');background-size:cover;background-position:center;animation:panorama 20s linear infinite"></div>
+              <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;color:white;font-size:11px">360° View</div>
+              <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;color:white;font-size:11px">AR Available</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="startVRPreview(this)" style="flex:1;background:linear-gradient(90deg,var(--luxury-purple),var(--luxury-emerald));color:#012">Start VR Tour</button>
+              <button class="btn" onclick="toggleARMode(this)" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2)">AR Mode</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Solo Travel Social Network -->
+        <div class="card interactive-card" style="background:linear-gradient(180deg,var(--card),rgba(26,26,26,0.8));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--luxury-gold),var(--luxury-purple));display:flex;align-items:center;justify-content:center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.75 1.75 0 0 0 18.3 7.5H15c-.55 0-1 .45-1 1V19c0 .55.45 1 1 1h3c.55 0 1-.45 1-1zM8 12c.83 0 1.5-.67 1.5-1.5S8.83 9 8 9s-1.5.67-1.5 1.5S7.17 12 8 12zm2.5-6.5c0-.83-.67-1.5-1.5-1.5S7.5 4.67 7.5 5.5 8.17 7 9 7s1.5-.67 1.5-1.5zM5 7c-1.11 0-2 .89-2 2v5.5H.5V17c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-2.5H7V9c0-1.11-.89-2-2-2z" fill="#012"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="color:var(--accent);margin:0;font-size:18px">Solo Traveler Network</h3>
+              <div style="color:var(--soft);font-size:12px">Connect with fellow adventurers</div>
+            </div>
+          </div>
+          <div id="socialNetwork" style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--luxury-emerald),var(--luxury-gold));display:flex;align-items:center;justify-content:center;font-size:14px;color:#012">A</div>
+              <div style="flex:1">
+                <div style="color:white;font-size:14px;font-weight:500">Alex joined Tokyo group</div>
+                <div style="color:var(--soft);font-size:12px">2 hours ago</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--luxury-purple),var(--luxury-emerald));display:flex;align-items:center;justify-content:center;font-size:14px;color:#012">S</div>
+              <div style="flex:1">
+                <div style="color:white;font-size:14px;font-weight:500">Sarah posted in Bali</div>
+                <div style="color:var(--soft);font-size:12px">5 hours ago</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px">
+              <button class="btn" onclick="findTravelBuddies()" style="flex:1;background:linear-gradient(90deg,var(--luxury-gold),var(--luxury-purple));color:#012">Find Buddies</button>
+              <button class="btn" onclick="joinCommunity()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2)">Join Groups</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart Translation -->
+        <div class="card interactive-card" style="background:linear-gradient(180deg,var(--card),rgba(26,26,26,0.8));border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--luxury-emerald),var(--luxury-purple));display:flex;align-items:center;justify-content:center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" fill="#012"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="color:var(--accent);margin:0;font-size:18px">Smart Translation</h3>
+              <div style="color:var(--soft);font-size:12px">Real-time language assistance</div>
+            </div>
+          </div>
+          <div id="translationTool" style="margin-bottom:16px">
+            <div style="margin-bottom:12px">
+              <select id="sourceLang" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.2);padding:8px;border-radius:6px;color:inherit;margin-bottom:8px">
+                <option value="en" style="background:var(--card);color:white">English</option>
+                <option value="es" style="background:var(--card);color:white">Spanish</option>
+                <option value="fr" style="background:var(--card);color:white">French</option>
+                <option value="ja" style="background:var(--card);color:white">Japanese</option>
+                <option value="zh" style="background:var(--card);color:white">Chinese</option>
+              </select>
+              <textarea id="translateInput" placeholder="Enter text to translate..." style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.2);padding:8px;border-radius:6px;color:inherit;min-height:60px;resize:vertical" oninput="liveTranslate()"></textarea>
+            </div>
+            <div style="margin-bottom:12px">
+              <select id="targetLang" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.2);padding:8px;border-radius:6px;color:inherit;margin-bottom:8px">
+                <option value="es" style="background:var(--card);color:white">Spanish</option>
+                <option value="fr" style="background:var(--card);color:white">French</option>
+                <option value="ja" style="background:var(--card);color:white">Japanese</option>
+                <option value="zh" style="background:var(--card);color:white">Chinese</option>
+                <option value="en" style="background:var(--card);color:white">English</option>
+              </select>
+              <div id="translateOutput" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);padding:8px;border-radius:6px;color:var(--soft);min-height:60px;font-style:italic">Translation will appear here...</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="speakTranslation()" style="flex:1;background:linear-gradient(90deg,var(--luxury-emerald),var(--luxury-purple));color:#012">Speak</button>
+              <button class="btn" onclick="savePhrase()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2)">Save</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    
+    <section id="pages" class="bg-section" style="padding:40px 0;margin:20px 0">
+      <h2 style="cursor:pointer;transition:200ms" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='inherit'">Pages & Tools</h2>
+      <div class="cards" style="margin-top:12px">
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="demoPageFlights()">
+          <strong>✈️ Flight + Hotel</strong>
+          <p class="tiny">Full booking engine with fare prediction & multi-carrier search.</p>
+          <button class="service-btn" style="margin-top:8px" onclick="demoPageFlights()">Explore</button>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="demoPageTours()">
+          <strong>🎯 Tour Marketplace</strong>
+          <p class="tiny">Travel agents list packages — filter by ratings, safety score, price.</p>
+          <button class="service-btn" style="margin-top:8px" onclick="demoPageTours()">Explore</button>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="demoPageReviews()">
+          <strong>⭐ Customer Reviews</strong>
+          <p class="tiny">Verified reviews, AR snippets and verified traveller tags.</p>
+          <button class="service-btn" style="margin-top:8px" onclick="demoPageReviews()">Explore</button>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'" onclick="demoPageVlogs()">
+          <strong>🎬 Travel Vlogs</strong>
+          <p class="tiny">Creator-driven video feed and editor for travel creators.</p>
+          <button class="service-btn" style="margin-top:8px" onclick="demoPageVlogs()">Explore</button>
+        </div>
+      </div>
+    </section>
+
+    
+    <section id="book">
+      <h2>Book a Rental</h2>
+      <div class="cards" style="margin-top:12px">
+        <div class="card">
+          <h3>Car / Bike Rental</h3>
+          <p class="tiny">Choose vehicle, dates, add insurance and emergency mode.</p>
+          <div style="margin-top:10px">
+            <label class="tiny">Pickup city</label>
+            <input id="rentCity" class="input" placeholder="e.g., Mumbai" />
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <input id="rentFrom" type="date" class="input" />
+              <input id="rentTo" type="date" class="input" />
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button class="btn" onclick="bookRental()">Reserve</button>
+              <button class="btn" onclick="estimateRental()">Estimate Cost</button>
+            </div>
+            <div style="margin-top:10px;color:var(--soft)" id="rentalEst"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Group Packages</h3>
+          <p class="tiny">Family / Friends packages with dynamic cost splitting.</p>
+          <div style="margin-top:10px">
+            <input id="groupSize" class="input" placeholder="Group size" type="number" />
+            <button class="btn" style="margin-top:8px" onclick="estimateGroup()">Estimate Split</button>
+            <div id="groupResult" style="margin-top:8px;color:var(--soft)"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reviews">
+      <h2>Customer Reviews</h2>
+      <div class="reviews" id="reviewsHolder">
+        <div class="review card">“Amazing AR preview — saved us hours.” — Tara</div>
+        <div class="review card">“AI agent found a cheaper multi-city route.” — Raj</div>
+        <div class="review card">“Travel Buddy helped me find a tour mate!” — Sneha</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+        <button class="btn" id="revPrev">◀ Prev</button>
+        <button class="btn" id="revNext">Next ▶</button>
+        <div style="margin-left:auto;color:var(--soft);font-size:13px" id="revCounter">1 / 3</div>
+      </div>
+    </section>
+
+    
+    <section id="vlogs">
+      <h2>Travel Vlogs</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px">
+        <div class="card"><strong>City Street Foods</strong><div class="tiny">10m • Delhi</div></div>
+        <div class="card"><strong>Roadtrip Kerala</strong><div class="tiny">8m • Kerala</div></div>
+        <div class="card"><strong>Himalayan Trails</strong><div class="tiny">14m • Manali</div></div>
+      </div>
+    </section>
+
+    <!-- Map exploration section removed as per request -->
+
+    
+    <section id="contact" class="bg-section" style="padding:40px 0;margin:40px 0">
+      <h2 style="cursor:pointer;transition:200ms" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='inherit'">Contact Us</h2>
+      <div class="cards" style="margin-top:12px">
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+          <h3>💬 Get in touch</h3>
+          <input class="input" id="cName" placeholder="Your name" />
+          <input class="input" id="cEmail" placeholder="Email" style="margin-top:8px" />
+          <textarea class="input" id="cMsg" placeholder="Message" style="margin-top:8px;height:120px"></textarea>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button class="btn" onclick="sendContact()" style="flex:1">Send</button>
+            <button class="btn" onclick="demoContactQuick()" style="flex:1">Quick Help</button>
+          </div>
+        </div>
+        <div class="card interactive-card" style="cursor:pointer;transition:300ms" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 40px rgba(0,212,255,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+          <h3>📍 Our Offices</h3>
+          <div class="tiny" style="margin-bottom:12px">Available in major Indian cities</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <button class="service-btn" onclick="demoOfficeCall('Mumbai')" style="width:100%">📞 Mumbai</button>
+            <button class="service-btn" onclick="demoOfficeCall('Bangalore')" style="width:100%">📞 Bangalore</button>
+            <button class="service-btn" onclick="demoOfficeCall('Delhi')" style="width:100%">📞 Delhi</button>
+            <button class="service-btn" onclick="demoOfficeChat()" style="width:100%">💬 Live Chat</button>
+          </div>
+          <!-- office location map removed -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Google Maps Section -->
+    <section id="map-section" style="padding:72px 0">
+      <div class="container">
+        <h2 style="text-align:center;margin-bottom:24px">Explore Destinations</h2>
+        <div style="margin-bottom:20px;text-align:center">
+          <input id="map-search" type="text" placeholder="Search for places..." style="padding:10px;border:1px solid var(--accent);border-radius:8px;width:300px;max-width:90%;background:#1a1a1a;color:white">
+          <button onclick="searchPlace()" style="padding:10px 15px;background:var(--accent);border:none;border-radius:8px;color:#0f0f0f;margin-left:10px;cursor:pointer">Search</button>
+        </div>
+        <div id="map-loading" style="text-align:center;color:var(--soft);padding:40px;display:block">Loading map...</div>
+        <div id="map" style="height:400px;width:100%;border-radius:12px;border:1px solid rgba(30,144,255,0.1);display:none"></div>
+      </div>
+    </section>
+
+    
+    <footer>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-weight:700">Pack<span style="color:var(--accent)">Ngo</span></div>
+        <div style="color:var(--soft)">© PackNgo 2025 • Built with ❤️</div>
+        <div style="display:flex;gap:8px"><a href="#">Privacy</a><a href="#">Terms</a></div>
+      </div>
+    </footer>
+  </main>
+
+  
+  <div class="modal" id="modalLogin" aria-hidden="true">
+    <div class="modal-card">
+      <div class="login-3d-header">
+        <span>🔒 Login to PackNgo</span>
+      </div>
+      <div class="login-3d-avatar">👤</div>
+      <form class="login-3d-form" autocomplete="off" onsubmit="event.preventDefault(); login3D();">
+        <input class="input" id="loginEmail" placeholder="Email" type="email" autocomplete="username" required />
+        <input class="input" id="loginPass" placeholder="Password" type="password" autocomplete="current-password" required />
+      </form>
+      <div class="login-3d-actions">
+        <button class="btn" onclick="login3D()">Login</button>
+        <button class="btn" onclick="closeLogin()">Close</button>
+      </div>
+      <div class="login-3d-social">
+        <button title="Google" onclick="loginSocial('Google')">
+          <img class="login-logo" src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_2013_Google.png" alt="Google" />
+        </button>
+        <button title="Facebook" onclick="loginSocial('Facebook')">
+          <img class="login-logo" src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook" />
+        </button>
+        <button title="Apple" onclick="loginSocial('Apple')">
+          <img class="login-logo" src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple" />
+        </button>
+      </div>
+      <div class="login-3d-footer">No account? <a href="#" style="color:var(--accent)" onclick="openSignupModal();return false;">Sign up</a> | <a href="#" style="color:var(--accent)" onclick="openForgotModal();return false;">Forgot password?</a></div>
+    </div>
+  </div>
+
+  <!-- 3D Sign Up Modal -->
+  <div class="modal" id="modalSignup" aria-hidden="true">
+    <div class="modal-card">
+      <div class="login-3d-header">
+        <span>📝 Sign Up for PackNgo</span>
+      </div>
+      <div class="login-3d-avatar">🆕</div>
+      <form class="login-3d-form" autocomplete="off" onsubmit="event.preventDefault(); signup3D();">
+        <input class="input" id="signupName" placeholder="Name" type="text" required />
+        <input class="input" id="signupEmail" placeholder="Email" type="email" required />
+        <input class="input" id="signupPass" placeholder="Password" type="password" required />
+      </form>
+      <div class="login-3d-actions">
+        <button class="btn" onclick="signup3D()">Sign Up</button>
+        <button class="btn" onclick="closeSignupModal()">Close</button>
+      </div>
+      <div class="login-3d-footer">Already have an account? <a href="#" style="color:var(--accent)" onclick="openLogin();closeSignupModal();return false;">Login</a></div>
+    </div>
+  </div>
+
+  <!-- 3D Forgot Password Modal -->
+  <div class="modal" id="modalForgot" aria-hidden="true">
+    <div class="modal-card">
+      <div class="login-3d-header">
+        <span>🔑 Forgot Password</span>
+      </div>
+      <div class="login-3d-avatar">❓</div>
+      <form class="login-3d-form" autocomplete="off" onsubmit="event.preventDefault(); forgot3D();">
+        <input class="input" id="forgotEmail" placeholder="Enter your email" type="email" required />
+      </form>
+      <div class="login-3d-actions">
+        <button class="btn" onclick="forgot3D()">Reset Password</button>
+        <button class="btn" onclick="closeForgotModal()">Close</button>
+      </div>
+      <div class="login-3d-footer">Back to <a href="#" style="color:var(--accent)" onclick="openLogin();closeForgotModal();return false;">Login</a></div>
+    </div>
+  </div>
+
+  
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- location detail modal removed -->
+
+  <!-- Travel Vlogs Modal -->
+  <div class="modal" id="vlogsModal" aria-hidden="true">
+    <div class="modal-card" style="width:700px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(90deg,var(--accent),var(--luxury-purple));color:#012;font-weight:600">
+        <span>🎬 Travel Vlogs</span>
+        <button onclick="closeVlogsModal()" style="background:transparent;border:none;color:#012;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px;max-height:500px;overflow-y:auto">
+        <p style="color:var(--soft);margin-bottom:16px">Explore creator-driven travel stories and videos. Click on a vlog to watch or interact.</p>
+        <div id="vlogsList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px">
+          <!-- Vlogs will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weather Modal -->
+  <div class="modal" id="weatherModal" aria-hidden="true">
+    <div class="modal-card" style="width:400px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(90deg,#87CEEB,#00BFFF);color:#012;font-weight:600">
+        <span>🌤️ Weather Information</span>
+        <button onclick="closeWeatherModal()" style="background:transparent;border:none;color:#012;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px">
+        <div style="margin-bottom:16px">
+          <label class="tiny">Select City</label>
+          <select class="input" id="weatherSelect" onchange="updateWeather()">
+            <option value="Delhi">Delhi, India</option>
+            <option value="Mumbai">Mumbai, India</option>
+            <option value="Bangalore">Bangalore, India</option>
+            <option value="Goa">Goa, India</option>
+            <option value="Paris">Paris, France</option>
+            <option value="Tokyo">Tokyo, Japan</option>
+            <option value="New York">New York, USA</option>
+            <option value="London">London, UK</option>
+          </select>
+        </div>
+        <div id="weatherDetails" style="text-align:center">
+          <div style="font-size:48px;margin:16px 0">🌤️</div>
+          <div style="font-size:24px;font-weight:700" id="detailTemp">28°C</div>
+          <div style="color:var(--soft);margin:8px 0" id="weatherDesc">Sunny</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+            <div>
+              <div style="font-size:12px;color:var(--soft)">Humidity</div>
+              <div style="font-weight:600" id="humidity">65%</div>
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--soft)">Wind Speed</div>
+              <div style="font-weight:600" id="windSpeed">12 km/h</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Currency Modal -->
+  <div class="modal" id="currencyModal" aria-hidden="true">
+    <div class="modal-card" style="width:400px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(90deg,#FFD700,#FFA500);color:#012;font-weight:600">
+        <span>💱 Currency Converter</span>
+        <button onclick="closeCurrencyModal()" style="background:transparent;border:none;color:#012;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px">
+        <div style="margin-bottom:16px">
+          <label class="tiny">Amount</label>
+          <input class="input" id="currencyAmount" type="number" placeholder="Enter amount" oninput="convertCurrency()" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div>
+            <label class="tiny">From</label>
+            <select class="input" id="currencyFrom" onchange="convertCurrency()">
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="INR" selected>INR</option>
+              <option value="JPY">JPY</option>
+            </select>
+          </div>
+          <div>
+            <label class="tiny">To</label>
+            <select class="input" id="currencyTo" onchange="convertCurrency()">
+              <option value="INR" selected>INR</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="JPY">JPY</option>
+            </select>
+          </div>
+        </div>
+        <div style="text-align:center;padding:16px;background:#f8f9fa;border-radius:8px">
+          <div style="font-size:12px;color:var(--soft);margin-bottom:8px">Converted Amount</div>
+          <div style="font-size:24px;font-weight:700;color:var(--accent)" id="convertedAmount">0.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications Modal -->
+  <div class="modal" id="notificationsModal" aria-hidden="true">
+    <div class="modal-card" style="width:350px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(90deg,var(--accent),var(--luxury-purple));color:#012;font-weight:600">
+        <span>🔔 Notifications</span>
+        <button onclick="closeNotificationsModal()" style="background:transparent;border:none;color:#012;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px;max-height:400px;overflow-y:auto">
+        <div id="notificationsList">
+          <!-- Notifications will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Agent Modal -->
+  <div class="modal" id="agentModal" aria-hidden="true">
+    <div class="modal-card" style="width:600px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(90deg,var(--accent),var(--luxury-purple));color:#012;font-weight:600">
+        <span>🤖 AI Travel Agent</span>
+        <button onclick="closeAgent()" style="background:transparent;border:none;color:#012;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px">
+        <div id="agentConv" style="max-height:300px;overflow-y:auto;margin-bottom:16px;padding:12px;background:#0f0f23;border-radius:8px;border:1px solid #333">
+          <div style="color:var(--soft);text-align:center;padding:20px">👋 Hi! I'm your AI Travel Agent. Ask me anything about your trip!</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input id="agentInput" class="input" placeholder="Ask me about flights, hotels, safety, deals..." />
+          <button class="btn" onclick="askAgent()" style="background:linear-gradient(90deg,var(--accent),var(--luxury-purple));color:#012">Ask</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Itinerary Builder Modal -->
+  <div class="modal" id="itineraryModal" aria-hidden="true">
+    <div class="modal-card" style="width:600px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--luxury-gold);color:#0f0f0f;font-weight:600">
+        <span>🗺️ Build Your Itinerary</span>
+        <button onclick="closeItineraryModal()" style="background:transparent;border:none;color:#0f0f0f;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px">
+        <div style="margin-bottom:16px">
+          <label class="tiny">Trip Duration</label>
+          <select class="input" id="tripDuration" onchange="updateItinerary()">
+            <option value="3">3 Days</option>
+            <option value="5">5 Days</option>
+            <option value="7" selected>7 Days</option>
+            <option value="10">10 Days</option>
+          </select>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="tiny">Destination</label>
+          <select class="input" id="tripDestination" onchange="updateItinerary()">
+            <option value="goa">Goa, India</option>
+            <option value="kerala">Kerala, India</option>
+            <option value="manali">Manali, India</option>
+            <option value="rajasthan">Rajasthan, India</option>
+            <option value="paris">Paris, France</option>
+            <option value="tokyo">Tokyo, Japan</option>
+          </select>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="tiny">Travel Style</label>
+          <select class="input" id="travelStyle" onchange="updateItinerary()">
+            <option value="adventure">Adventure</option>
+            <option value="relaxation">Relaxation</option>
+            <option value="cultural">Cultural</option>
+            <option value="food">Food & Wine</option>
+          </select>
+        </div>
+        <div id="itineraryContent" style="max-height:300px;overflow-y:auto">
+          <!-- Itinerary will be generated here -->
+        </div>
+        <div style="margin-top:16px;text-align:right">
+          <button class="btn" onclick="exportItinerary()">Export Itinerary</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Travel Buddies Modal -->
+  <div class="modal" id="buddiesModal" aria-hidden="true">
+    <div class="modal-card" style="width:700px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--luxury-gold);color:#0f0f0f;font-weight:600">
+        <span>👫 Find Travel Buddies</span>
+        <button onclick="closeBuddiesModal()" style="background:transparent;border:none;color:#0f0f0f;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px;max-height:500px;overflow-y:auto">
+        <div style="margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="tiny">Destination</label>
+            <input class="input" id="buddyDestination" placeholder="e.g., Tokyo, Goa..." />
+          </div>
+          <div>
+            <label class="tiny">Travel Dates</label>
+            <input class="input" id="buddyDates" type="month" />
+          </div>
+          <div>
+            <label class="tiny">Interests</label>
+            <select class="input" id="buddyInterests">
+              <option value="">All Interests</option>
+              <option value="adventure">Adventure</option>
+              <option value="culture">Cultural</option>
+              <option value="food">Food & Wine</option>
+              <option value="photography">Photography</option>
+            </select>
+          </div>
+          <div>
+            <label class="tiny">Age Range</label>
+            <select class="input" id="buddyAge">
+              <option value="">Any Age</option>
+              <option value="18-25">18-25</option>
+              <option value="25-35">25-35</option>
+              <option value="35+">35+</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="searchBuddies()" style="width:100%;background:var(--luxury-gold);color:#0f0f0f;font-weight:500;margin-bottom:16px">Search Buddies</button>
+        
+        <div id="buddiesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+          <!-- Buddies will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Community Groups Modal -->
+  <div class="modal" id="groupsModal" aria-hidden="true">
+    <div class="modal-card" style="width:800px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--luxury-gold);color:#0f0f0f;font-weight:600">
+        <span>👥 Travel Communities</span>
+        <button onclick="closeGroupsModal()" style="background:transparent;border:none;color:#0f0f0f;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:16px;max-height:600px;overflow-y:auto">
+        <div style="margin-bottom:16px">
+          <input class="input" id="groupSearch" placeholder="Search communities..." onkeyup="searchGroups()" />
+        </div>
+        <div id="groupsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px">
+          <!-- Groups will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buddy Profile Modal -->
+  <div class="modal" id="buddyProfileModal" aria-hidden="true">
+    <div class="modal-card" style="width:500px;max-width:95%;padding:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--luxury-gold);color:#0f0f0f;font-weight:600">
+        <span id="profileName">Buddy Profile</span>
+        <button onclick="closeBuddyProfileModal()" style="background:transparent;border:none;color:#0f0f0f;cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="padding:20px">
+        <div style="text-align:center;margin-bottom:16px">
+          <div id="profileAvatar" style="width:80px;height:80px;border-radius:50%;background:var(--luxury-gold);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px"></div>
+          <h3 id="profileTitle" style="margin:0;color:#ffffff"></h3>
+          <div id="profileLocation" style="color:var(--soft);font-size:12px;margin-top:4px"></div>
+        </div>
+        
+        <div style="margin-bottom:16px;padding:12px;background:#1a1a1a;border-radius:8px;border:1px solid rgba(30,144,255,0.1)">
+          <h4 style="margin:0 0 8px 0;color:var(--accent);font-size:12px">ABOUT</h4>
+          <p id="profileBio" style="margin:0;font-size:13px;color:#c9c9c9;line-height:1.5"></p>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <h4 style="margin:0 0 8px 0;color:var(--accent);font-size:12px">INTERESTS</h4>
+          <div id="profileInterests" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <h4 style="margin:0 0 8px 0;color:var(--accent);font-size:12px">TRAVEL STYLE</h4>
+          <div id="profileTravelStyle" style="color:#c9c9c9;font-size:13px"></div>
+        </div>
+        
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="messageBuddy()" style="flex:1;background:var(--luxury-gold);color:#0f0f0f;font-weight:500">💬 Message</button>
+          <button class="btn" onclick="addBuddy()" style="flex:1">➕ Add Buddy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // enhanced interactive behaviors: mobile nav, persistence, validation, carousel controls, toast
+    const modal = id => document.getElementById(id);
+
+    // Toast helper
+    const toastEl = document.getElementById('toast');
+    function showToast(msg, ms = 3000){
+      if(!toastEl) return alert(msg);
+      toastEl.textContent = msg; toastEl.classList.add('show');
+      setTimeout(()=>{toastEl.classList.remove('show');}, ms);
+    }
+
+    // Mobile nav toggle
+    const navToggle = document.getElementById('navToggle');
+    const mainNav = document.getElementById('mainNav');
+    if(navToggle){
+      navToggle.addEventListener('click', ()=>{
+        const open = mainNav.classList.toggle('open');
+        navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    }
+    // Close mobile nav when a link is clicked
+    mainNav && mainNav.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>{ mainNav.classList.remove('open'); navToggle && navToggle.setAttribute('aria-expanded','false'); }));
+
+    // Login modal + persistence
+    document.getElementById('openLogin').addEventListener('click', e=>{ e.preventDefault(); openLogin(); });
+    function openLogin(){ modal('modalLogin').classList.add('open'); }
+    function closeLogin(){ modal('modalLogin').classList.remove('open'); }
+    
+    function login3D() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPass').value.trim();
+      if (!email || !pass) {
+        showToast('Please enter email and password');
+        return;
+      }
+      localStorage.setItem('packngo_login', email);
+      showToast('Login successful! (Demo)');
+      closeLogin();
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPass').value = '';
+    }
+    
+    function loginSocial(provider) {
+      showToast(`Logging in with ${provider}... (Demo)`);
+      setTimeout(() => {
+        showToast(`${provider} login would connect here`);
+      }, 1000);
+    }
+    
+    function openSignupModal() {
+      modal('modalSignup').classList.add('open');
+    }
+    
+    function closeSignupModal() {
+      modal('modalSignup').classList.remove('open');
+    }
+    
+    function signup3D() {
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const pass = document.getElementById('signupPass').value.trim();
+      if (!name || !email || !pass) {
+        showToast('Please fill in all fields');
+        return;
+      }
+      showToast('Account created! (Demo)');
+      closeSignupModal();
+      document.getElementById('signupName').value = '';
+      document.getElementById('signupEmail').value = '';
+      document.getElementById('signupPass').value = '';
+    }
+    
+    function openForgotModal() {
+      modal('modalForgot').classList.add('open');
+    }
+    
+    function closeForgotModal() {
+      modal('modalForgot').classList.remove('open');
+    }
+    
+    function forgot3D() {
+      const email = document.getElementById('forgotEmail').value.trim();
+      if (!email) {
+        showToast('Please enter your email');
+        return;
+      }
+      showToast('Password reset link sent to ' + email + ' (Demo)');
+      closeForgotModal();
+      document.getElementById('forgotEmail').value = '';
+    }
+    
+    // Prefill login email and auto-close login modal if already logged in
+    const savedLogin = localStorage.getItem('packngo_login');
+    if(savedLogin) {
+      document.getElementById('loginEmail').value = savedLogin;
+      // Auto-close login modal if user is already logged in
+      const loginModal = document.getElementById('modalLogin');
+      if(loginModal) loginModal.classList.remove('open');
+    }
+
+    // AI Agent
+    document.getElementById('openAgent').addEventListener('click', ()=>openAgent());
+    function openAgent(){ modal('agentModal').classList.add('open'); }
+    function closeAgent(){ modal('agentModal').classList.remove('open'); }
+
+    // Travel Vlogs
+    function demoPageVlogs(){
+      populateVlogs();
+      openVlogsModal();
+    }
+    function openVlogsModal(){ modal('vlogsModal').classList.add('open'); }
+    function closeVlogsModal(){ modal('vlogsModal').classList.remove('open'); }
+    function populateVlogs(){
+      const list = document.getElementById('vlogsList');
+      list.innerHTML = '';
+      const vlogs = [
+        {title: 'Tokyo Nights: Hidden Gems', creator: 'WanderlustMia', views: '2.3M', likes: 45000, desc: 'Exploring Shibuya after dark and the best ramen spots.', thumb: '🌃'},
+        {title: 'Swiss Alps Adventure', creator: 'MountainMike', views: '1.8M', likes: 32000, desc: 'Hiking Interlaken and paragliding over the peaks.', thumb: '🏔️'},
+        {title: 'Bali Beach Vibes', creator: 'IslandExplorer', views: '3.1M', likes: 67000, desc: 'Surfing in Uluwatu and yoga retreats in Ubud.', thumb: '🏖️'},
+        {title: 'Paris Food Tour', creator: 'FoodieFran', views: '4.2M', likes: 89000, desc: 'From croissants to escargot - a culinary journey.', thumb: '🥐'},
+        {title: 'Safari in Kenya', creator: 'WildlifeWendy', views: '2.7M', likes: 55000, desc: 'Tracking lions and elephants in the Maasai Mara.', thumb: '🦁'},
+        {title: 'Iceland Aurora Chase', creator: 'NorthernLightsNick', views: '1.5M', likes: 28000, desc: 'Northern lights and blue lagoons in winter.', thumb: '🌌'}
+      ];
+      vlogs.forEach(v => {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#1a1a2e;border-radius:10px;padding:12px;cursor:pointer;transition:300ms;border:1px solid #333';
+        card.onmouseover = () => card.style.transform = 'translateY(-2px)';
+        card.onmouseout = () => card.style.transform = 'none';
+        card.onclick = () => playVlog(v);
+        card.innerHTML = `
+          <div style="font-size:24px;margin-bottom:8px">${v.thumb}</div>
+          <h4 style="margin:0 0 4px 0;font-size:14px;color:var(--accent)">${v.title}</h4>
+          <p style="margin:0 0 8px 0;font-size:12px;color:var(--soft)">by ${v.creator} • ${v.views} views</p>
+          <p style="margin:0 0 12px 0;font-size:12px;color:#ccc">${v.desc}</p>
+          <div style="display:flex;gap:8px">
+            <button class="btn" style="font-size:12px;padding:4px 8px" onclick="event.stopPropagation(); likeVlog('${v.title}')">👍 ${v.likes.toLocaleString()}</button>
+            <button class="btn" style="font-size:12px;padding:4px 8px" onclick="event.stopPropagation(); commentVlog('${v.title}')">💬 Comment</button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+    function playVlog(v){
+      showToast(`Playing: ${v.title} by ${v.creator} (demo video)`);
+      // In a real app, this would load a video player
+    }
+    function likeVlog(title){
+      showToast(`Liked: ${title}!`);
+      // In a real app, this would update the like count on server
+    }
+    function commentVlog(title){
+      const comment = prompt(`Add a comment to "${title}":`);
+      if(comment) showToast(`Comment added: "${comment}"`);
+    }
+
+    // Interactive Widgets
+    function toggleWeather(){
+      modal('weatherModal').classList.add('open');
+      updateWeather();
+    }
+    function closeWeatherModal(){
+      modal('weatherModal').classList.remove('open');
+    }
+    function updateWeather(){
+      const city = document.getElementById('weatherSelect').value;
+      document.getElementById('weatherCity').textContent = city;
+      
+      // Mock weather data
+      const weatherData = {
+        'Delhi': { temp: '28°C', desc: 'Sunny', icon: '☀️', humidity: '45%', wind: '15 km/h' },
+        'Mumbai': { temp: '30°C', desc: 'Humid', icon: '🌤️', humidity: '75%', wind: '12 km/h' },
+        'Bangalore': { temp: '24°C', desc: 'Pleasant', icon: '🌤️', humidity: '60%', wind: '10 km/h' },
+        'Goa': { temp: '32°C', desc: 'Beach Weather', icon: '🏖️', humidity: '70%', wind: '18 km/h' },
+        'Paris': { temp: '18°C', desc: 'Cloudy', icon: '☁️', humidity: '55%', wind: '8 km/h' },
+        'Tokyo': { temp: '22°C', desc: 'Clear', icon: '🌤️', humidity: '50%', wind: '11 km/h' },
+        'New York': { temp: '15°C', desc: 'Cool', icon: '🌥️', humidity: '40%', wind: '20 km/h' },
+        'London': { temp: '16°C', desc: 'Rainy', icon: '🌧️', humidity: '80%', wind: '14 km/h' }
+      };
+      
+      const data = weatherData[city] || weatherData['Delhi'];
+      document.getElementById('detailTemp').textContent = data.temp;
+      document.getElementById('weatherDesc').textContent = data.desc;
+      document.getElementById('weatherDetails').querySelector('div').textContent = data.icon;
+      document.getElementById('humidity').textContent = data.humidity;
+      document.getElementById('windSpeed').textContent = data.wind;
+      document.getElementById('weatherTemp').textContent = data.temp;
+    }
+
+    function toggleCurrency(){
+      modal('currencyModal').classList.add('open');
+      convertCurrency();
+    }
+    function closeCurrencyModal(){
+      modal('currencyModal').classList.remove('open');
+    }
+    function convertCurrency(){
+      const amount = parseFloat(document.getElementById('currencyAmount').value) || 0;
+      const from = document.getElementById('currencyFrom').value;
+      const to = document.getElementById('currencyTo').value;
+      
+      // Mock exchange rates
+      const rates = {
+        'USD': { 'INR': 83.5, 'EUR': 0.92, 'GBP': 0.79, 'JPY': 150.2, 'USD': 1 },
+        'EUR': { 'INR': 90.8, 'USD': 1.09, 'GBP': 0.86, 'JPY': 163.4, 'EUR': 1 },
+        'GBP': { 'INR': 105.6, 'USD': 1.27, 'EUR': 1.16, 'JPY': 190.1, 'GBP': 1 },
+        'INR': { 'USD': 0.012, 'EUR': 0.011, 'GBP': 0.0095, 'JPY': 1.8, 'INR': 1 },
+        'JPY': { 'INR': 0.556, 'USD': 0.0067, 'EUR': 0.0061, 'GBP': 0.0053, 'JPY': 1 }
+      };
+      
+      const rate = rates[from][to];
+      const converted = (amount * rate).toFixed(2);
+      document.getElementById('convertedAmount').textContent = converted;
+      document.getElementById('currencyRate').textContent = `1 ${from} = ${rate.toFixed(2)} ${to}`;
+    }
+
+    // Live Stats Simulation
+    function updateLiveStats(){
+      const visitorEl = document.getElementById('visitorCount');
+      const bookingEl = document.getElementById('bookingCount');
+      const flightEl = document.getElementById('flightCount');
+      
+      let visitors = parseInt(visitorEl.textContent.replace(',', ''));
+      let bookings = parseInt(bookingEl.textContent);
+      let flights = parseInt(flightEl.textContent);
+      
+      // Simulate live updates
+      visitors += Math.floor(Math.random() * 3) - 1; // -1 to +2
+      bookings += Math.random() > 0.7 ? 1 : 0;
+      flights += Math.random() > 0.8 ? 1 : 0;
+      
+      visitors = Math.max(1000, Math.min(2000, visitors));
+      bookings = Math.max(50, Math.min(150, bookings));
+      flights = Math.max(100, Math.min(300, flights));
+      
+      visitorEl.textContent = visitors.toLocaleString();
+      bookingEl.textContent = bookings;
+      flightEl.textContent = flights;
+    }
+    // Update stats every 30 seconds
+    setInterval(updateLiveStats, 30000);
+
+    // Notifications
+    function toggleNotifications(){
+      modal('notificationsModal').classList.add('open');
+      loadNotifications();
+      // Hide badge when opened
+      document.getElementById('notificationBadge').style.display = 'none';
+    }
+    function closeNotificationsModal(){
+      modal('notificationsModal').classList.remove('open');
+    }
+    function loadNotifications(){
+      const list = document.getElementById('notificationsList');
+      const notifications = [
+        {icon: '✈️', title: 'Flight Deal Alert', message: '20% off on flights to Goa this weekend!', time: '2 min ago', urgent: true},
+        {icon: '🏖️', title: 'Hotel Recommendation', message: 'Beach Resort in Kerala - Book now for best rates', time: '15 min ago', urgent: false},
+        {icon: '🌤️', title: 'Weather Update', message: 'Clear skies expected in Delhi for your trip', time: '1 hour ago', urgent: false},
+        {icon: '💰', title: 'Price Drop', message: 'Your saved flight to Mumbai is now ₹2,500 cheaper', time: '2 hours ago', urgent: true},
+        {icon: '🎯', title: 'Personalized Offer', message: 'Exclusive 15% discount on your next booking', time: '1 day ago', urgent: false}
+      ];
+      
+      list.innerHTML = notifications.map(n => `
+        <div style="padding:12px;border-bottom:1px solid #333;cursor:pointer" onclick="markAsRead(this)">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="font-size:18px">${n.icon}</span>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:14px;margin-bottom:4px">${n.title}</div>
+              <div style="font-size:12px;color:var(--soft);margin-bottom:4px">${n.message}</div>
+              <div style="font-size:10px;color:#666">${n.time}</div>
+            </div>
+            ${n.urgent ? '<span style="color:#ff4757;font-size:12px">●</span>' : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+    function markAsRead(element){
+      element.style.opacity = '0.6';
+      showToast('Notification marked as read');
+    }
+
+    // Simulate new notifications
+    function addRandomNotification(){
+      if(Math.random() > 0.7){ // 30% chance every 2 minutes
+        const badge = document.getElementById('notificationBadge');
+        let count = parseInt(badge.textContent) || 0;
+        count++;
+        badge.textContent = count;
+        badge.style.display = 'inline';
+        showToast('New notification received!');
+      }
+    }
+    setInterval(addRandomNotification, 120000); // Every 2 minutes
+
+    // Chat Widget
+    function initChatWidget(){
+      const chatWidget = document.createElement('div');
+      chatWidget.id = 'chatWidget';
+      chatWidget.innerHTML = `
+        <div id="chatToggle" onclick="toggleChat()" style="position:fixed;bottom:20px;right:20px;width:60px;height:60px;background:linear-gradient(135deg,var(--accent),var(--luxury-purple));border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;cursor:pointer;z-index:1000;box-shadow:0 4px 20px rgba(0,212,255,0.3);transition:all 0.3s ease">
+          💬
+        </div>
+        <div id="chatWindow" style="display:none;position:fixed;bottom:90px;right:20px;width:350px;height:500px;background:#1a1a2e;border-radius:12px;border:1px solid #333;z-index:999;box-shadow:0 8px 30px rgba(0,0,0,0.5);overflow:hidden">
+          <div style="padding:16px;background:linear-gradient(90deg,var(--accent),var(--luxury-purple));color:white;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+            <span>AI Travel Assistant</span>
+            <button onclick="toggleChat()" style="background:none;border:none;color:white;font-size:18px;cursor:pointer">✕</button>
+          </div>
+          <div id="chatMessages" style="padding:16px;height:380px;overflow-y:auto;background:#0f0f23">
+            <div style="text-align:center;color:#666;margin:20px 0">🤖 Hi! I'm your AI Travel Assistant powered by ChatGPT. Ask me anything about travel!</div>
+          </div>
+          <div style="padding:16px;border-top:1px solid #333;display:flex;gap:8px">
+            <input id="chatInput" placeholder="Ask me anything..." style="flex:1;padding:8px;border:1px solid #555;border-radius:6px;background:#1a1a2e;color:white" onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()" style="padding:8px 12px;background:var(--accent);border:none;border-radius:6px;color:white;cursor:pointer">Send</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(chatWidget);
+    }
+    function toggleChat(){
+      const window = document.getElementById('chatWindow');
+      window.style.display = window.style.display === 'none' ? 'block' : 'none';
+    }
+    // AI Configuration - Replace with your OpenAI API key
+    const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_HERE'; // Get from https://platform.openai.com/api-keys
+
+    async function getAIResponse(userMessage) {
+      if (OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
+        return "AI assistant is not configured. Please add your OpenAI API key to enable AI responses.";
+      }
+      
+      try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+              { role: 'system', content: 'You are a helpful travel assistant for PackNgo. Provide accurate, real-time travel advice, recommendations, and information. Be friendly and informative.' },
+              { role: 'user', content: userMessage }
+            ],
+            max_tokens: 150,
+            temperature: 0.7
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('API request failed');
+        }
+
+        const data = await response.json();
+        return data.choices[0].message.content.trim();
+      } catch (error) {
+        console.error('AI Error:', error);
+        return "Sorry, I'm having trouble connecting right now. Please try again later.";
+      }
+    }
+
+    function sendChatMessage(){
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      if(!message) return;
+      
+      const messages = document.getElementById('chatMessages');
+      messages.innerHTML += `<div style="margin:8px 0;text-align:right"><div style="display:inline-block;padding:8px 12px;background:var(--accent);border-radius:8px;color:white">${message}</div></div>`;
+      
+      // AI Response using ChatGPT
+      getAIResponse(message).then(response => {
+        messages.innerHTML += `<div style="margin:8px 0"><div style="display:inline-block;padding:8px 12px;background:#333;border-radius:8px;color:#ccc">${response}</div></div>`;
+        messages.scrollTop = messages.scrollHeight;
+      }).catch(error => {
+        messages.innerHTML += `<div style="margin:8px 0"><div style="display:inline-block;padding:8px 12px;background:#333;border-radius:8px;color:#ccc">Sorry, I couldn't get a response right now. Please try again.</div></div>`;
+        messages.scrollTop = messages.scrollHeight;
+        console.error('AI Error:', error);
+      });
+      
+      input.value = '';
+      messages.scrollTop = messages.scrollHeight;
+    }
+    // Initialize chat widget
+    initChatWidget();
+
+    // Google Maps / Leaflet Initialization
+    let map;
+    let marker;
+    function initMap() {
+      const loadingEl = document.getElementById('map-loading');
+      const mapEl = document.getElementById('map');
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (mapEl) mapEl.style.display = 'block';
+
+      const defaultLocation = { lat: 20.5937, lng: 78.9629 }; // Center of India
+
+      // If Google Maps is available, use it
+      if (window.google && google.maps) {
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 5,
+          center: defaultLocation,
+          styles: [
+            { elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
+            { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a1a' }] },
+            { elementType: 'labels.text.fill', stylers: [{ color: '#a0c4ff' }] },
+            { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#a0c4ff' }] },
+            { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#a0c4ff' }] },
+            { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#263c3f' }] },
+            { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#6b9a76' }] },
+            { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#38414e' }] },
+            { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#212a37' }] },
+            { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9ca5b3' }] },
+            { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#746855' }] },
+            { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#1f2835' }] },
+            { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#f3d19c' }] },
+            { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#2f3948' }] },
+            { featureType: 'transit.station', elementType: 'labels.text.fill', stylers: [{ color: '#a0c4ff' }] },
+            { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#001f3f' }] },
+            { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#515c6d' }] },
+            { featureType: 'water', elementType: 'labels.text.stroke', stylers: [{ color: '#17263c' }] }
+          ]
+        });
+
+        // Add search functionality (Google Places)
+        const input = document.getElementById('map-search');
+        try {
+          const searchBox = new google.maps.places.SearchBox(input);
+          map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+          map.addListener('bounds_changed', function() {
+            searchBox.setBounds(map.getBounds());
+          });
+
+          searchBox.addListener('places_changed', function() {
+            const places = searchBox.getPlaces();
+            if (places.length == 0) return;
+
+            const bounds = new google.maps.LatLngBounds();
+            places.forEach(function(place) {
+              if (!place.geometry) return;
+              if (marker) marker.setMap(null);
+              marker = new google.maps.Marker({
+                map: map,
+                title: place.name,
+                position: place.geometry.location
+              });
+              if (place.geometry.viewport) bounds.union(place.geometry.viewport);
+              else bounds.extend(place.geometry.location);
+            });
+            map.fitBounds(bounds);
+          });
+        } catch (e) {
+          console.warn('Google Places not available:', e);
+        }
+
+      } else if (window.L) {
+        // Leaflet fallback
+        const defaultLatLng = [defaultLocation.lat, defaultLocation.lng];
+        try {
+          map = L.map('map').setView(defaultLatLng, 5);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(map);
+          marker = L.marker(defaultLatLng).addTo(map);
+        } catch (err) {
+          console.error('Leaflet init error', err);
+          if (loadingEl) loadingEl.innerHTML = 'Map failed to load.';
+        }
+      } else {
+        if (loadingEl) loadingEl.innerHTML = 'Map service not available.';
+      }
+    }
+
+    // Search place: Google Places when available, else Nominatim + Leaflet
+    function searchPlace() {
+      const query = document.getElementById('map-search').value;
+      if (!query) return;
+
+      if (window.google && google.maps) {
+        const service = new google.maps.places.PlacesService(map);
+        const request = { query: query, fields: ['name', 'geometry', 'formatted_address'] };
+        service.findPlaceFromQuery(request, function(results, status) {
+          if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
+            const place = results[0];
+            if (marker) marker.setMap(null);
+            marker = new google.maps.Marker({ map: map, title: place.name, position: place.geometry.location });
+            map.setCenter(place.geometry.location);
+            map.setZoom(15);
+          }
+        });
+        return;
+      }
+
+      // Nominatim fallback for Leaflet
+      fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query))
+        .then(res => res.json())
+        .then(results => {
+          if (!results || !results[0]) return showToast('Place not found');
+          const r = results[0];
+          const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+          if (window.L && map) {
+            if (marker && marker.remove) marker.remove();
+            marker = L.marker([lat, lon]).addTo(map).bindPopup(r.display_name).openPopup();
+            map.setView([lat, lon], 13);
+          }
+        }).catch(err => {
+          console.error('Nominatim error', err); showToast('Search failed');
+        });
+    }
+
+    // Initialize map when Google Maps API loads
+    // window.initMap = initMap; // Not needed with callback
+
+    // Fallback for map loading error
+    window.addEventListener('load', function() {
+      setTimeout(() => {
+        const loadingEl = document.getElementById('map-loading');
+        const mapEl = document.getElementById('map');
+        if (loadingEl && loadingEl.style.display !== 'none') {
+          loadingEl.innerHTML = 'Map failed to load. Please check your internet connection and API key.';
+        }
+      }, 10000); // 10 second timeout
+    });
+
+    // Typing Effect for Hero Title
+    function typeWriter(text, element, speed = 100) {
+      let i = 0;
+      element.innerHTML = '';
+      function type() {
+        if (i < text.length) {
+          element.innerHTML += text.charAt(i);
+          i++;
+          setTimeout(type, speed);
+        }
+      }
+      type();
+    }
+
+    // Initialize typing effect
+    const heroTitle = document.getElementById('hero-title');
+    if (heroTitle) {
+      setTimeout(() => {
+        typeWriter('PackNgo — Plan smarter, travel bolder', heroTitle);
+      }, 1000);
+    }
+
+    // Smooth Scrolling for Navigation Links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+
+    // Interactive Elements: Add click effects
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', function() {
+        this.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+          this.style.transform = '';
+        }, 150);
+      });
+    });
+
+    // Scroll-triggered Animations
+    function revealOnScroll() {
+      const elements = document.querySelectorAll('.card, section h2, .feature-item');
+      elements.forEach(element => {
+        const elementTop = element.getBoundingClientRect().top;
+        const windowHeight = window.innerHeight;
+        if (elementTop < windowHeight - 100) {
+          element.style.opacity = '1';
+          element.style.transform = 'translateY(0)';
+        }
+      });
+    }
+
+    // Initial setup for scroll animations
+    document.querySelectorAll('.card, section h2, .feature-item').forEach(element => {
+      element.style.opacity = '0';
+      element.style.transform = 'translateY(30px)';
+      element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    });
+
+    window.addEventListener('scroll', revealOnScroll);
+    revealOnScroll(); // Initial check
+
+    // Animated Counters
+    function animateCounter(element, target, duration = 2000) {
+      const start = 0;
+      const increment = target / (duration / 16);
+      let current = start;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          element.textContent = target.toLocaleString();
+          clearInterval(timer);
+        } else {
+          element.textContent = Math.floor(current).toLocaleString();
+        }
+      }, 16);
+    }
+
+    // Animate counters when in view
+    function animateCountersOnScroll() {
+      const counters = [
+        { id: 'visitorCount', target: 1247 },
+        { id: 'bookingCount', target: 89 },
+        { id: 'flightCount', target: 156 }
+      ];
+
+      counters.forEach(counter => {
+        const element = document.getElementById(counter.id);
+        if (element && element.getBoundingClientRect().top < window.innerHeight - 100 && !element.dataset.animated) {
+          animateCounter(element, counter.target);
+          element.dataset.animated = 'true';
+        }
+      });
+    }
+
+    window.addEventListener('scroll', animateCountersOnScroll);
+    animateCountersOnScroll(); // Initial check
+
+    // Back to Top Button
+    const backToTopBtn = document.createElement('button');
+    backToTopBtn.innerHTML = '↑';
+    backToTopBtn.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 100;
+      font-size: 20px;
+      box-shadow: 0 4px 20px rgba(30,144,255,0.3);
+      will-change: opacity;
+    `;
+    backToTopBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.body.appendChild(backToTopBtn);
+
+    // Show/hide back to top button
+    window.addEventListener('scroll', () => {
+      backToTopBtn.style.opacity = window.scrollY > 300 ? '1' : '0';
+    });
+
+    // Itinerary Builder
+    function openItineraryBuilder(){
+      modal('itineraryModal').classList.add('open');
+      updateItinerary();
+    }
+    function closeItineraryModal(){
+      modal('itineraryModal').classList.remove('open');
+    }
+    function updateItinerary(){
+      const duration = parseInt(document.getElementById('tripDuration').value);
+      const destination = document.getElementById('tripDestination').value;
+      const style = document.getElementById('travelStyle').value;
+      
+      const itineraries = {
+        goa: {
+          adventure: ['Day 1: Beach hopping & water sports', 'Day 2: Scuba diving & dolphin watching', 'Day 3: Trekking & adventure activities', 'Day 4: Island hopping & boat rides', 'Day 5: Parasailing & jet skiing', 'Day 6: Beach relaxation & spa', 'Day 7: Cultural sites & farewell dinner'],
+          relaxation: ['Day 1: Beach resort check-in & spa', 'Day 2: Private beach & yoga sessions', 'Day 3: Ayurvedic treatments', 'Day 4: Sunset cruises & fine dining', 'Day 5: Beachside massages', 'Day 6: Meditation & wellness', 'Day 7: Peaceful departure'],
+          cultural: ['Day 1: Old Goa churches & history', 'Day 2: Local markets & handicrafts', 'Day 3: Portuguese architecture tour', 'Day 4: Spice plantations visit', 'Day 5: Traditional cooking class', 'Day 6: Folk performances', 'Day 7: Cultural farewell'],
+          food: ['Day 1: Seafood feast & beach dining', 'Day 2: Goan cuisine cooking class', 'Day 3: Wine tasting & fine dining', 'Day 4: Street food exploration', 'Day 5: Beachside BBQs', 'Day 6: Gourmet experiences', 'Day 7: Farewell dinner']
+        },
+        kerala: {
+          adventure: ['Day 1: Backwater boat journey', 'Day 2: Hill station trekking', 'Day 3: Wildlife safari', 'Day 4: River rafting', 'Day 5: Spice plantation tours', 'Day 6: Beach adventures', 'Day 7: Cultural experiences'],
+          relaxation: ['Day 1: Ayurvedic resort arrival', 'Day 2: Spa treatments & yoga', 'Day 3: Backwater houseboat stay', 'Day 4: Meditation retreats', 'Day 5: Nature walks', 'Day 6: Wellness therapies', 'Day 7: Peaceful departure'],
+          cultural: ['Day 1: Fort Kochi heritage walk', 'Day 2: Kathakali performance', 'Day 3: Tea plantation visit', 'Day 4: Traditional art forms', 'Day 5: Temple visits', 'Day 6: Cultural workshops', 'Day 7: Farewell ceremonies'],
+          food: ['Day 1: Seafood specialties', 'Day 2: Kerala sadhya experience', 'Day 3: Spice garden tours', 'Day 4: Cooking demonstrations', 'Day 5: Local eateries', 'Day 6: Gourmet dining', 'Day 7: Culinary farewell']
+        }
+      };
+      
+      const destItineraries = itineraries[destination] || itineraries['goa'];
+      const activities = destItineraries[style] || destItineraries['adventure'];
+      
+      const content = document.getElementById('itineraryContent');
+      content.innerHTML = activities.slice(0, duration).map((activity, index) => `
+        <div style="padding:12px;margin:8px 0;border-left:3px solid var(--accent);background:#1a1a2e;border-radius:8px">
+          <div style="font-weight:600;color:var(--accent)">Day ${index + 1}</div>
+          <div style="margin-top:4px;color:#ccc">${activity}</div>
+        </div>
+      `).join('');
+    }
+    function exportItinerary(){
+      const content = document.getElementById('itineraryContent').innerText;
+      navigator.clipboard.writeText(content).then(() => {
+        showToast('Itinerary copied to clipboard!');
+      });
+    }
+    function askAgent(){
+      const qEl = document.getElementById('agentInput'); const q = qEl.value.trim();
+      if(!q) return showToast('Ask something to the agent');
+      const conv = document.getElementById('agentConv');
+      const userLine = document.createElement('div'); userLine.style.fontWeight='600'; userLine.style.marginTop='8px'; userLine.textContent = 'You: '+q;
+      conv.appendChild(userLine);
+      const reply = document.createElement('div'); reply.style.marginTop='6px';
+      // Slightly smarter demo replies
+      const low = q.toLowerCase();
+      if(low.includes('cheaper')||low.includes('save')||low.includes('price')) reply.textContent = 'PackNgo AI: Try +/-2 days or split the trip into two legs for savings.';
+      else if(low.includes('safety')||low.includes('safe')) reply.textContent = 'PackNgo AI: Current SafeScore: 8.6. Avoid crowded zones after 10pm.';
+      else reply.textContent = 'PackNgo AI: Great question — this is a demo reply. Integrate a backend to fetch live suggestions.';
+      conv.appendChild(reply);
+      conv.scrollTop = conv.scrollHeight; qEl.value='';
+    }
+
+    // Cost comparison demo (fake)
+    function compareCost(){
+      const from = document.getElementById('cmpFrom').value || 'Delhi';
+      const to = document.getElementById('cmpTo').value || 'Goa';
+      const est = Math.floor(3000 + Math.random()*6000);
+      document.getElementById('bestRoute').textContent = from + ' → ' + to;
+      document.getElementById('estCost').textContent = '₹' + est.toLocaleString();
+      // persist last route
+      localStorage.setItem('packngo_last_route', JSON.stringify({from,to,est}));
+    }
+
+    // Missing helper functions
+    function scrollToBook() {
+      const bookSection = document.getElementById('book');
+      if (bookSection) {
+        bookSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function demoStartBooking() {
+      showToast('Starting booking flow...');
+      setTimeout(() => {
+        showToast('Select your departure city and destination');
+      }, 800);
+    }
+
+    function demoCompareNow(){
+      showToast('🔍 Comparing 1000+ options across all carriers...');
+      setTimeout(()=>{ showToast('Best deal found: ₹3,999 (Save ₹1,200). Book now?'); }, 1000);
+    }
+
+    function demoBestDeal(){
+      showToast('💰 Scanning for hidden deals & price drops...');
+      setTimeout(()=>{ showToast('3 flash deals found! Limited time offers on popular routes'); }, 900);
+    }
+
+    function demoARPreview(){
+      showToast('🥽 Loading AR hotel preview... (demo animation)');
+      setTimeout(()=>{ showToast('360° view ready! Explore room in augmented reality'); }, 1200);
+    }
+
+    function demoVlogExplore(){
+      showToast('🎬 Vlog explorer: Popular travel creators near you');
+      setTimeout(()=>{ showToast('12 vlogs from verified travelers in this destination'); }, 700);
+    }
+
+    function demoBuddyConnect(){
+      showToast('👫 Finding travel buddies with matching interests...');
+      setTimeout(()=>{ showToast('Found 5 solo travelers heading to same destination next month'); }, 900);
+    }
+
+    // global keyboard: Esc to close modals / close nav
+    window.addEventListener('keydown', e=>{
+      if(e.key==='Escape'){ document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open')); if(mainNav) { mainNav.classList.remove('open'); navToggle && navToggle.setAttribute('aria-expanded','false'); } }
+    });
+
+    // world map functionality removed
+
+    // offline svg map pan/zoom (offices)
+    (function(){
+      const svg = document.getElementById('mapSVG');
+      if(!svg) return;
+      let isDragging=false, startPt={x:0,y:0};
+      const view={x:60,y:5,w:30,h:20};
+      svg.addEventListener('mousedown', e=>{
+        isDragging=true; startPt={x:e.clientX,y:e.clientY}; svg.style.cursor='grabbing';
+      });
+      window.addEventListener('mousemove', e=>{
+        if(isDragging){
+          const dx=(e.clientX-startPt.x)*(view.w/svg.clientWidth);
+          const dy=(e.clientY-startPt.y)*(view.h/svg.clientHeight);
+          view.x -= dx; view.y -= dy;
+          updateView();
+          startPt={x:e.clientX,y:e.clientY};
+        }
+      });
+      window.addEventListener('mouseup', ()=>{isDragging=false;svg.style.cursor='grab';});
+      svg.addEventListener('wheel', e=>{
+        e.preventDefault();
+        const scale = e.deltaY>0 ? 1.1 : 0.9;
+        const mx = e.offsetX*view.w/svg.clientWidth + view.x;
+        const my = e.offsetY*view.h/svg.clientHeight + view.y;
+        view.w *= scale; view.h *= scale;
+        view.x = mx - (mx - view.x)*scale;
+        view.y = my - (my - view.y)*scale;
+        updateView();
+      }, {passive:false});
+      function updateView(){ svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`); }
+    })();
+
+    // warm welcome
+    window.addEventListener('load', ()=>{ setTimeout(()=>{ compareCost(); }, 800); });
+
+    // map modal handlers removed
+
+    function updateDetailMapView(){
+      const svg = document.getElementById('detailMapSVG');
+      const center = {x:200, y:150};
+      const w = 400 / detailMapZoom;
+      const h = 300 / detailMapZoom;
+      svg.setAttribute('viewBox', `${center.x - w/2} ${center.y - h/2} ${w} ${h}`);
+    }
+
+    // detail map pan with mouse
+    (function(){
+      const svg = document.getElementById('detailMapSVG');
+      let isDragging = false, startPt = {x:0, y:0};
+      svg.addEventListener('mousedown', e=>{isDragging=true; startPt={x:e.clientX, y:e.clientY}; svg.style.cursor='grabbing'});
+      window.addEventListener('mousemove', e=>{
+        if(isDragging && svg.parentElement.offsetParent!==null){
+          const dx = (e.clientX - startPt.x) * (400/(svg.clientWidth*detailMapZoom));
+          const dy = (e.clientY - startPt.y) * (300/(svg.clientHeight*detailMapZoom));
+          const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+          svg.setAttribute('viewBox', `${vb[0]-dx} ${vb[1]-dy} ${vb[2]} ${vb[3]}`);
+          startPt = {x:e.clientX, y:e.clientY};
+        }
+      });
+      window.addEventListener('mouseup', ()=>{isDragging=false; svg.style.cursor='grab'});
+      svg.addEventListener('wheel', e=>{
+        e.preventDefault();
+        const factor = e.deltaY > 0 ? 1.1 : 0.9;
+        detailMapZoom *= factor;
+        detailMapZoom = Math.max(0.5, Math.min(detailMapZoom, 3));
+        updateDetailMapView();
+      }, {passive:false});
+    })();
+
+    // Add loading animation to body
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.5s ease';
+    window.addEventListener('load', () => {
+      document.body.style.opacity = '1';
+    });
+
+    // Enhanced cursor effects
+    let cursorTrails = [];
+    let mouseX = 0, mouseY = 0;
+    
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      
+      // Create cursor trail
+      if (Math.random() > 0.7) { // Only create trail sometimes for performance
+        const trail = document.createElement('div');
+        trail.className = 'cursor-trail';
+        trail.style.left = mouseX + 'px';
+        trail.style.top = mouseY + 'px';
+        document.body.appendChild(trail);
+        
+        cursorTrails.push(trail);
+        
+        // Remove old trails
+        if (cursorTrails.length > 10) {
+          const oldTrail = cursorTrails.shift();
+          if (oldTrail.parentNode) {
+            oldTrail.parentNode.removeChild(oldTrail);
+          }
+        }
+        
+        // Auto remove trail after animation
+        setTimeout(() => {
+          if (trail.parentNode) {
+            trail.parentNode.removeChild(trail);
+          }
+        }, 500);
+      }
+    });
+
+    // Cursor interaction effects
+    document.addEventListener('click', (e) => {
+      // Create click effect
+      const clickEffect = document.createElement('div');
+      clickEffect.style.cssText = `
+        position: fixed;
+        left: ${e.clientX - 25}px;
+        top: ${e.clientY - 25}px;
+        width: 50px;
+        height: 50px;
+        border: 2px solid var(--accent);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        animation: clickRipple 0.6s ease-out forwards;
+      `;
+      document.body.appendChild(clickEffect);
+      
+      setTimeout(() => {
+        if (clickEffect.parentNode) {
+          clickEffect.parentNode.removeChild(clickEffect);
+        }
+      }, 600);
+    });
+
+    // Add click ripple animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes clickRipple {
+        0% { transform: scale(0); opacity: 1; }
+        100% { transform: scale(2); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Cursor type changes based on element
+    document.addEventListener('mouseover', (e) => {
+      const target = e.target;
+      
+      if (target.matches('button, .btn, [onclick]')) {
+        document.body.style.cursor = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' fill='%23ff6b6b'/%3E%3C/svg%3E\"), pointer";
+      } else if (target.matches('input, textarea, select')) {
+        document.body.style.cursor = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M14.828 14.828a4 4 0 0 0-5.656 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' fill='%23ff6b6b'/%3E%3C/svg%3E\"), text";
+      } else if (target.matches('.card, .interactive-widget')) {
+        document.body.style.cursor = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' fill='%23ff6b6b'/%3E%3C/svg%3E\"), pointer";
+      }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+      // Reset to default cursor
+      document.body.style.cursor = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5L21 16z' fill='%2300d4ff'/%3E%3C/svg%3E\"), auto";
+    });
+
+    // Loading Screen Functionality
+    window.addEventListener('load', () => {
+      const loadingScreen = document.getElementById('loadingScreen');
+      setTimeout(() => {
+        loadingScreen.classList.add('hide');
+        setTimeout(() => {
+          loadingScreen.style.display = 'none';
+        }, 500);
+      }, 3000); // Show loading screen for at least 3 seconds
+    });
+
+    // Advanced Features Functions
+
+    // Safety & Crowd Tracking
+    let safetyAlertsEnabled = false;
+    let crowdData = { level: 'Low', percentage: 25 };
+    let safetyData = { rating: 98, alerts: [] };
+
+    function updateSafetyData() {
+      // Simulate real-time data updates
+      safetyData.rating = Math.max(85, Math.min(100, safetyData.rating + (Math.random() - 0.5) * 5));
+      crowdData.percentage = Math.max(10, Math.min(90, crowdData.percentage + (Math.random() - 0.5) * 20));
+
+      if (crowdData.percentage < 30) crowdData.level = 'Low';
+      else if (crowdData.percentage < 60) crowdData.level = 'Medium';
+      else crowdData.level = 'High';
+
+      document.getElementById('safetyRating').textContent = Math.round(safetyData.rating) + '%';
+      document.getElementById('safetyBar').style.width = safetyData.rating + '%';
+      document.getElementById('crowdLevel').textContent = crowdData.level;
+      document.getElementById('crowdBar').style.width = crowdData.percentage + '%';
+
+      // Add visual alerts for high crowd levels
+      const tracker = document.getElementById('safetyTracker');
+      if (crowdData.level === 'High') {
+        tracker.classList.add('crowd-high');
+      } else {
+        tracker.classList.remove('crowd-high');
+      }
+    }
+
+    function toggleSafetyAlerts(btn) {
+      if (!btn) btn = event.target;
+      safetyAlertsEnabled = !safetyAlertsEnabled;
+      if (safetyAlertsEnabled) {
+        btn.textContent = 'Alerts On';
+        btn.style.background = 'linear-gradient(90deg,var(--luxury-gold),var(--luxury-emerald))';
+        showToast('Safety alerts enabled! You\'ll receive notifications about crowd levels and safety updates.');
+        // Start real-time updates
+        if (!window.safetyInterval) {
+          window.safetyInterval = setInterval(updateSafetyData, 5000);
+        }
+      } else {
+        btn.textContent = 'Enable Alerts';
+        btn.style.background = 'linear-gradient(90deg,var(--luxury-emerald),var(--luxury-gold))';
+        showToast('Safety alerts disabled.');
+        if (window.safetyInterval) {
+          clearInterval(window.safetyInterval);
+          window.safetyInterval = null;
+        }
+      }
+    }
+
+    // viewSafetyMap removed
+
+    // AR/VR Preview Functions
+    let vrMode = false;
+    let arMode = false;
+
+    function startVRPreview(btn) {
+      if (!btn) btn = event.target;
+      vrMode = !vrMode;
+      const scene = document.getElementById('vrScene');
+
+      if (vrMode) {
+        btn.textContent = 'Exit VR Tour';
+        btn.style.background = 'linear-gradient(90deg,var(--luxury-gold),var(--luxury-purple))';
+        scene.style.animation = 'panorama 10s linear infinite';
+        showToast('VR Tour started! Use mouse to look around. Click to interact with hotspots.');
+      } else {
+        btn.textContent = 'Start VR Tour';
+        btn.style.background = 'linear-gradient(90deg,var(--luxury-purple),var(--luxury-emerald))';
+        scene.style.animation = 'none';
+        showToast('VR Tour ended.');
+      }
+    }
+
+    function toggleARMode(btn) {
+      if (!btn) btn = event.target;
+      arMode = !arMode;
+
+      if (arMode) {
+        btn.textContent = 'Exit AR Mode';
+        btn.style.background = 'linear-gradient(90deg,var(--luxury-gold),var(--luxury-purple))';
+        showToast('AR Mode activated! Point your device camera at landmarks for augmented information.');
+        // In a real app, this would access device camera and AR libraries
+      } else {
+        btn.textContent = 'AR Mode';
+        btn.style.background = 'linear-gradient(90deg,var(--luxury-purple),var(--luxury-emerald))';
+        showToast('AR Mode deactivated.');
+      }
+    }
+
+    // Solo Travel Social Network Functions
+    let socialConnections = [
+      { name: 'Alex', location: 'Tokyo', activity: 'joined Tokyo group', time: '2 hours ago' },
+      { name: 'Sarah', location: 'Bali', activity: 'posted in Bali', time: '5 hours ago' },
+      { name: 'Mike', location: 'Paris', activity: 'looking for travel buddies', time: '1 day ago' }
+    ];
+
+    // Comprehensive buddy database
+    const buddyDatabase = [
+      { id: 1, name: 'Emma', age: 26, avatar: '👩', location: 'London', destination: 'Tokyo', dates: '2026-04', bio: 'Adventure seeker exploring Asia for 3 weeks', interests: ['adventure', 'photography', 'food'], style: 'Off-the-beaten-path explorer' },
+      { id: 2, name: 'Carlos', age: 28, avatar: '👨', location: 'Barcelona', destination: 'Goa', dates: '2026-03', bio: 'Beach enthusiast and digital nomad', interests: ['beach', 'culture', 'surfing'], style: 'Relaxed beach bum' },
+      { id: 3, name: 'Lisa', age: 24, avatar: '👩', location: 'New York', destination: 'Paris', dates: '2026-05', bio: 'Photographer capturing travel moments and local stories', interests: ['photography', 'culture', 'food'], style: 'Cultural explorer' },
+      { id: 4, name: 'James', age: 30, avatar: '👨', location: 'Sydney', destination: 'Bali', dates: '2026-04', bio: 'Yoga and wellness enthusiast', interests: ['wellness', 'culture', 'food'], style: 'Mindful traveler' },
+      { id: 5, name: 'Sophia', age: 25, avatar: '👩', location: 'Rome', destination: 'Manali', dates: '2026-05', bio: 'Adventure sports junkie and nature lover', interests: ['adventure', 'hiking', 'photography'], style: 'Adrenaline seeker' },
+      { id: 6, name: 'Marco', age: 29, avatar: '👨', location: 'Milan', destination: 'Kerala', dates: '2026-04', bio: 'Foodie exploring culinary traditions around the world', interests: ['food', 'culture', 'cooking'], style: 'Gastronomic explorer' }
+    ];
+
+    // Community groups database
+    const communityGroups = [
+      { id: 1, name: 'Tokyo Solo Travelers', members: 234, icon: '🇯🇵', description: 'Connect with solo travelers exploring Tokyo and Japan', nextEvent: 'Pub crawl in Shibuya - March 15' },
+      { id: 2, name: 'Goa Beach Lovers', members: 189, icon: '🏖️', description: 'Beach enthusiasts sharing Goa travel tips and meetups', nextEvent: 'Sunset yoga session - March 18' },
+      { id: 3, name: 'Photography Travelers', members: 456, icon: '📸', description: 'Photographers sharing travel photography tips and guided tours', nextEvent: 'Golden hour photography walk - March 20' },
+      { id: 4, name: 'Backpackers India', members: 312, icon: '🎒', description: 'Budget travelers exploring India and sharing tips', nextEvent: 'Group trip to Rajasthan - April 1' },
+      { id: 5, name: 'Foodie Explorers', members: 278, icon: '🍜', description: 'Food lovers on culinary adventures around the world', nextEvent: 'Street food tour - March 22' },
+      { id: 6, name: 'Adventure Junkies', members: 398, icon: '⛰️', description: 'Thrill-seekers looking for adventure activities', nextEvent: 'Trekking expedition - April 5' }
+    ];
+
+    function openBuddiesModal(){
+      modal('buddiesModal').classList.add('open');
+      populateBuddies(buddyDatabase);
+    }
+    
+    function closeBuddiesModal(){
+      modal('buddiesModal').classList.remove('open');
+    }
+
+    function openGroupsModal(){
+      modal('groupsModal').classList.add('open');
+      populateGroups(communityGroups);
+    }
+    
+    function closeGroupsModal(){
+      modal('groupsModal').classList.remove('open');
+    }
+
+    function closeBuddyProfileModal(){
+      modal('buddyProfileModal').classList.remove('open');
+    }
+
+    function populateBuddies(buddies){
+      const list = document.getElementById('buddiesList');
+      list.innerHTML = '';
+      buddies.forEach(buddy => {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#1a1a1a;border:1px solid rgba(30,144,255,0.1);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.3s ease';
+        card.onmouseover = () => { card.style.transform = 'translateY(-4px)'; card.style.boxShadow = '0 8px 20px rgba(30,144,255,0.15)'; };
+        card.onmouseout = () => { card.style.transform = 'none'; card.style.boxShadow = 'none'; };
+        card.onclick = () => showBuddyProfile(buddy);
+        card.innerHTML = `
+          <div style="text-align:center">
+            <div style="font-size:48px;margin-bottom:8px">${buddy.avatar}</div>
+            <h4 style="margin:0 0 4px 0;font-size:16px;color:#ffffff">${buddy.name}, ${buddy.age}</h4>
+            <div style="color:var(--accent);font-size:12px;margin-bottom:8px">${buddy.location}</div>
+            <div style="color:var(--soft);font-size:12px;margin-bottom:12px">${buddy.bio}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;justify-content:center">
+              ${buddy.interests.map(interest => `<span style="background:rgba(30,144,255,0.15);color:var(--accent);padding:2px 6px;border-radius:4px;font-size:11px">${interest}</span>`).join('')}
+            </div>
+            <button class="btn" onclick="event.stopPropagation(); viewBuddyProfile(${buddy.id})" style="width:100%">View Profile</button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function populateGroups(groups){
+      const list = document.getElementById('groupsList');
+      list.innerHTML = '';
+      groups.forEach(group => {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#1a1a1a;border:1px solid rgba(30,144,255,0.1);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.3s ease';
+        card.onmouseover = () => { card.style.transform = 'translateY(-4px)'; card.style.boxShadow = '0 8px 20px rgba(30,144,255,0.15)'; };
+        card.onmouseout = () => { card.style.transform = 'none'; card.style.boxShadow = 'none'; };
+        card.innerHTML = `
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="font-size:32px">${group.icon}</div>
+            <div style="flex:1">
+              <h4 style="margin:0 0 4px 0;font-size:14px;color:#ffffff">${group.name}</h4>
+              <div style="color:var(--accent);font-size:11px;margin-bottom:6px">${group.members} members</div>
+              <p style="margin:0 0 8px 0;color:var(--soft);font-size:12px;line-height:1.4">${group.description}</p>
+              <div style="background:rgba(30,144,255,0.05);padding:6px;border-radius:6px;margin-bottom:8px">
+                <div style="color:var(--accent);font-size:10px;text-transform:uppercase;margin-bottom:2px">Next Event</div>
+                <div style="color:#c9c9c9;font-size:11px">${group.nextEvent}</div>
+              </div>
+              <button class="btn" onclick="event.stopPropagation(); joinGroup('${group.name}')" style="width:100%">Join Group</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function searchBuddies(){
+      const destination = document.getElementById('buddyDestination').value.toLowerCase();
+      const interests = document.getElementById('buddyInterests').value;
+      
+      let filtered = buddyDatabase.filter(buddy => {
+        let matchDest = !destination || buddy.destination.toLowerCase().includes(destination);
+        let matchInterest = !interests || buddy.interests.includes(interests);
+        return matchDest && matchInterest;
+      });
+      
+      if(filtered.length === 0) {
+        showToast('No buddies found matching your criteria. Try other filters!');
+        return;
+      }
+      populateBuddies(filtered);
+      showToast(`Found ${filtered.length} potential travel buddies!`);
+    }
+
+    function searchGroups(){
+      const search = document.getElementById('groupSearch').value.toLowerCase();
+      const filtered = communityGroups.filter(group => 
+        group.name.toLowerCase().includes(search) || 
+        group.description.toLowerCase().includes(search)
+      );
+      populateGroups(filtered);
+    }
+
+    function showBuddyProfile(buddy){
+      modal('buddyProfileModal').classList.add('open');
+      document.getElementById('profileName').textContent = buddy.name;
+      document.getElementById('profileAvatar').textContent = buddy.avatar;
+      document.getElementById('profileTitle').textContent = `${buddy.name}, ${buddy.age}`;
+      document.getElementById('profileLocation').textContent = `📍 ${buddy.location} → ${buddy.destination}`;
+      document.getElementById('profileBio').textContent = buddy.bio;
+      document.getElementById('profileTravelStyle').textContent = buddy.style;
+      document.getElementById('profileInterests').innerHTML = buddy.interests.map(interest => 
+        `<span style="background:rgba(30,144,255,0.2);color:var(--accent);padding:4px 8px;border-radius:4px;font-size:12px">#${interest}</span>`
+      ).join('');
+    }
+
+    function viewBuddyProfile(buddyId){
+      const buddy = buddyDatabase.find(b => b.id === buddyId);
+      if(buddy) showBuddyProfile(buddy);
+    }
+
+    function messageBuddy(){
+      const name = document.getElementById('profileName').textContent;
+      showToast(`💬 Opening message chat with ${name}...`);
+      setTimeout(() => {
+        showToast(`Chat with ${name} started! Send your first message.`);
+      }, 800);
+    }
+
+    function addBuddy(){
+      const name = document.getElementById('profileName').textContent;
+      showToast(`✅ Sent friend request to ${name}!`);
+    }
+
+    function joinGroup(groupName){
+      showToast(`🎉 Joining "${groupName}"...`);
+      setTimeout(() => {
+        showToast(`Welcome to ${groupName}! Check your inbox for group details.`);
+      }, 1000);
+    }
+
+    function findTravelBuddies() {
+      openBuddiesModal();
+    }
+
+    function joinCommunity() {
+      openGroupsModal();
+    }
+
+    // Smart Translation Functions
+    let savedPhrases = [];
+
+    function liveTranslate() {
+      const input = document.getElementById('translateInput').value;
+      const sourceLang = document.getElementById('sourceLang').value;
+      const targetLang = document.getElementById('targetLang').value;
+      const output = document.getElementById('translateOutput');
+
+      if (input.length > 0) {
+        // Simulate translation (in a real app, this would call a translation API)
+        const translations = {
+          'en-es': { 'Hello': 'Hola', 'Thank you': 'Gracias', 'Where is the bathroom?': '¿Dónde está el baño?', 'How much does this cost?': '¿Cuánto cuesta esto?' },
+          'en-fr': { 'Hello': 'Bonjour', 'Thank you': 'Merci', 'Where is the bathroom?': 'Où sont les toilettes?', 'How much does this cost?': 'Combien ça coûte?' },
+          'en-ja': { 'Hello': 'こんにちは', 'Thank you': 'ありがとう', 'Where is the bathroom?': 'トイレはどこですか？', 'How much does this cost?': 'これはいくらですか？' },
+          'en-zh': { 'Hello': '你好', 'Thank you': '谢谢', 'Where is the bathroom?': '洗手间在哪里？', 'How much does this cost?': '这个多少钱？' }
+        };
+
+        const key = `${sourceLang}-${targetLang}`;
+        let translation = translations[key]?.[input.trim()] || `[${targetLang.toUpperCase()}] ${input}`;
+
+        output.textContent = translation;
+        output.style.color = 'var(--accent)';
+      } else {
+        output.textContent = 'Translation will appear here...';
+        output.style.color = 'var(--soft)';
+      }
+    }
+
+    function speakTranslation() {
+      const text = document.getElementById('translateOutput').textContent;
+      if (text && text !== 'Translation will appear here...') {
+        // In a real app, this would use Web Speech API
+        showToast('Speaking translation... (Speech synthesis would play here)');
+      } else {
+        showToast('Please enter text to translate first.');
+      }
+    }
+
+    function savePhrase() {
+      const input = document.getElementById('translateInput').value;
+      const output = document.getElementById('translateOutput').textContent;
+
+      if (input && output && output !== 'Translation will appear here...') {
+        savedPhrases.push({ original: input, translation: output });
+        showToast(`Phrase saved! You now have ${savedPhrases.length} saved translations.`);
+      } else {
+        showToast('Please translate a phrase first before saving.');
+      }
+    }
+
+    // Initialize advanced features
+    window.addEventListener('load', () => {
+      // Start safety data updates
+      updateSafetyData();
+      setInterval(updateSafetyData, 10000); // Update every 10 seconds
+
+      // Initialize translation tool
+      document.getElementById('sourceLang').value = 'en';
+      document.getElementById('targetLang').value = 'es';
+    });
+
+    // Enhanced Interactive Animations
+    // Smooth scroll animation
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+
+    // Intersection Observer for scroll animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animation = entry.target.dataset.animation || 'fadeInUp 0.8s ease-out forwards';
+          entry.target.style.opacity = '1';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    // Observe all cards and sections
+    document.querySelectorAll('.card, .section, section').forEach(el => {
+      el.style.opacity = '0';
+      el.dataset.animation = 'fadeInUp 0.8s ease-out forwards';
+      observer.observe(el);
+    });
+
+    // Parallax effect on mouse move
+    document.addEventListener('mousemove', (e) => {
+      const cards = document.querySelectorAll('.interactive-card');
+      cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const xPercent = (x / rect.width) * 100;
+        const yPercent = (y / rect.height) * 100;
+        
+        card.style.setProperty('--mouse-x', xPercent + '%');
+        card.style.setProperty('--mouse-y', yPercent + '%');
+      });
+    });
+
+    // Button ripple effect
+    document.querySelectorAll('button, .btn').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        const ripple = document.createElement('span');
+        const rect = this.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+        
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        ripple.classList.add('ripple');
+        
+        this.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+      });
+    });
+
+    // Ripple effect CSS
+    const rippleStyle = document.createElement('style');
+    rippleStyle.textContent = `
+      button, .btn { position: relative; overflow: hidden; }
+      .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 215, 0, 0.4);
+        transform: scale(0);
+        animation: rippleAnimation 0.6s ease-out;
+        pointer-events: none;
+      }
+      @keyframes rippleAnimation {
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(rippleStyle);
+
+    // Smooth scroll on page load to anchor
+    window.addEventListener('load', () => {
+      if (window.location.hash) {
+        const target = document.querySelector(window.location.hash);
+        if (target) {
+          setTimeout(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 500);
+        }
+      }
+    });
+
+    // Add hover lift animation to all cards
+    document.querySelectorAll('.card, .interactive-card').forEach(card => {
+      card.addEventListener('mouseenter', function() {
+        this.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      });
+    });
+
+    // Fade in elements on scroll
+    const fadeInElements = document.querySelectorAll('[data-fade-in]');
+    fadeInElements.forEach(el => {
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 0.6s ease-out';
+      observer.observe(el);
+    });
+  </script>   // Optionally, show login modal on first visit   // Optionally, show login modal on first visit
+</body>
+</html>
+
