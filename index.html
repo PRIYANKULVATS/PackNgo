@@ -14,7 +14,7 @@
     
     :root{
       --bg:#001f3f; --card:#00294d; --accent:#1e90ff; --secondary:#3a6ea5; --tertiary:#2a5d8f;
-      --glass: rgba(255,255,255,0.04); --soft:# a0c4ff; --glass-2: rgba(255,255,255,0.03);
+      --glass: rgba(255,255,255,0.04); --soft:#a0c4ff; --glass-2: rgba(255,255,255,0.03);
       --luxury-gold:#1e90ff; --luxury-purple:#1f1f1f; --luxury-emerald:#2a5d8f;
       font-family: 'Playfair Display', 'Garamond', 'Times New Roman', serif;
     }
@@ -2678,6 +2678,8 @@
 
     // map modal handlers removed
 
+    let detailMapZoom = 1;
+
     function updateDetailMapView(){
       const svg = document.getElementById('detailMapSVG');
       const center = {x:200, y:150};
@@ -2690,6 +2692,7 @@
     (function(){
       const svg = document.getElementById('detailMapSVG');
       let isDragging = false, startPt = {x:0, y:0};
+      if(!svg) return;
       svg.addEventListener('mousedown', e=>{isDragging=true; startPt={x:e.clientX, y:e.clientY}; svg.style.cursor='grabbing'});
       window.addEventListener('mousemove', e=>{
         if(isDragging && svg.parentElement.offsetParent!==null){
@@ -3263,7 +3266,7 @@
       el.style.transition = 'opacity 0.6s ease-out';
       observer.observe(el);
     });
-  </script>   // Optionally, show login modal on first visit   // Optionally, show login modal on first visit
+  </script>
 </body>
 </html>
 
