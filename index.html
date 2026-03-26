@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="PackNgo — AI-powered travel platform. Flights, hotels, safety tracking, AR/VR previews and travel buddy network." />
+  <title>PackNgo — Travel Reimagined</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== LOADING SCREEN ===== -->
+  <div id="loading-screen" aria-hidden="true">
+    <div class="loading-content">
+      <svg class="loading-icon" width="72" height="72" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M9 6h6M3 10v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10M3 10h18M3 10l2-6h14l2 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 14v4M12 14v4M16 14v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1 class="loading-title">PackNgo</h1>
+      <p class="loading-subtitle">Travel Reimagined</p>
+      <div class="loading-bar-track">
+        <div class="loading-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HEADER ===== -->
+  <header id="site-header">
+    <div class="container nav-container">
+
+      <a href="#home" class="logo" aria-label="PackNgo Home">
+        <div class="logo-mark">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-name">Pack<span class="logo-accent">Ngo</span></span>
+          <span class="logo-tagline">Travel reimagined</span>
+        </div>
+      </a>
+
+      <button id="nav-toggle" class="nav-toggle" aria-controls="main-nav" aria-expanded="false" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav id="main-nav" aria-label="Main navigation">
+        <ul class="nav-list">
+          <li><a href="#home" class="nav-link">Home</a></li>
+          <li><a href="#about" class="nav-link">About</a></li>
+          <li><a href="#services" class="nav-link">Services</a></li>
+          <li><a href="#ai-features" class="nav-link">AI Features</a></li>
+          <li><a href="#buddy" class="nav-link">Travel Buddy</a></li>
+          <li><a href="#reviews" class="nav-link">Reviews</a></li>
+          <li><a href="#contact" class="nav-link">Contact</a></li>
+          <li><a href="#booking" class="nav-link nav-cta">Book Now</a></li>
+          <li>
+            <button id="btn-notifications" class="nav-icon-btn" aria-label="Notifications">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span id="notification-badge" class="badge" aria-label="3 notifications" hidden>3</span>
+            </button>
+          </li>
+          <li><button id="btn-open-login" class="nav-link-btn">Login</button></li>
+        </ul>
+      </nav>
+
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===== HERO SECTION ===== -->
+    <section id="home" class="hero-section">
+      <div class="container hero-container">
+
+        <div class="hero-left">
+          <span class="eyebrow-tag">AI-powered &bull; AR/VR &bull; Safety-first</span>
+          <h1 class="hero-title" id="hero-typed-title"></h1>
+          <p class="hero-lead">From flight and hotel combos to AR/VR previews, real-time safety tracking and a verified travel buddy network — PackNgo is the only travel platform you will ever need.</p>
+
+          <div class="hero-actions">
+            <button id="btn-start-booking" class="btn btn-primary">Start Booking</button>
+            <button id="btn-open-itinerary" class="btn btn-outline">Build Itinerary</button>
+            <button id="btn-open-agent" class="btn btn-outline">Try AI Agent</button>
+          </div>
+
+          <!-- Cost Comparison Widget -->
+          <div class="glass-card cost-card">
+            <div class="cost-card-header">
+              <div>
+                <p class="card-label">Live cost comparison</p>
+                <p class="cost-route" id="cost-route-display">Delhi &rarr; Goa</p>
+              </div>
+              <div class="cost-estimate-wrap">
+                <p class="card-label">Estimated</p>
+                <p class="cost-estimate" id="cost-estimate-display">&#8377;5,199</p>
+              </div>
+            </div>
+            <div class="cost-card-inputs">
+              <input type="text" id="cmp-from" class="input-field" placeholder="From city" list="city-list" autocomplete="off" />
+              <input type="text" id="cmp-to" class="input-field" placeholder="To city" list="city-list" autocomplete="off" />
+              <button id="btn-compare-cost" class="btn btn-sm">Compare</button>
+            </div>
+            <datalist id="city-list">
+              <option value="Delhi"></option>
+              <option value="Mumbai"></option>
+              <option value="Bangalore"></option>
+              <option value="Goa"></option>
+              <option value="Manali"></option>
+              <option value="Kerala"></option>
+              <option value="Jaipur"></option>
+              <option value="Hyderabad"></option>
+              <option value="Kolkata"></option>
+              <option value="Pune"></option>
+              <option value="Chennai"></option>
+              <option value="Ladakh"></option>
+            </datalist>
+          </div>
+
+          <!-- Quick Info Widgets -->
+          <div class="widget-row">
+            <button id="btn-open-weather" class="glass-card widget-card" aria-label="Open weather widget">
+              <div class="widget-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div>
+                <p class="card-label">Weather</p>
+                <p class="widget-value" id="weather-city-display">Delhi</p>
+              </div>
+              <p class="widget-temp" id="weather-temp-display">28&deg;C</p>
+            </button>
+
+            <button id="btn-open-currency" class="glass-card widget-card" aria-label="Open currency converter">
+              <div class="widget-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div>
+                <p class="card-label">Currency</p>
+                <p class="widget-value">USD &rarr; INR</p>
+              </div>
+              <p class="widget-rate" id="currency-rate-display">1 USD = 83.5</p>
+            </button>
+          </div>
+
+          <!-- Live Stats -->
+          <div class="glass-card stats-card">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <p class="stat-number" id="stat-users">1,247</p>
+                <p class="stat-label">Active Users</p>
+              </div>
+              <div class="stat-item">
+                <p class="stat-number" id="stat-bookings">89</p>
+                <p class="stat-label">Bookings Today</p>
+              </div>
+              <div class="stat-item">
+                <p class="stat-number" id="stat-flights">156</p>
+                <p class="stat-label">Flights Tracked</p>
+              </div>
+            </div>
+            <p class="stats-live-label">Live</p>
+          </div>
+        </div>
+
+        <!-- Hero Right — Showcase Cards -->
+        <div class="hero-right">
+          <div class="glass-card showcase-card">
+            <div class="showcase-header">
+              <div>
+                <p class="showcase-title">Flight + Hotel</p>
+                <p class="card-label">Smart combos &bull; Flexible dates</p>
+              </div>
+              <div class="safe-score-wrap">
+                <p class="card-label">SafeScore</p>
+                <p class="safe-score">8.6</p>
+              </div>
+            </div>
+            <div class="showcase-grid">
+              <div class="showcase-item">
+                <p class="card-label">Next promo</p>
+                <p class="showcase-value">Summer Saver — Up to 30% off</p>
+              </div>
+              <div class="showcase-item">
+                <p class="card-label">Top package</p>
+                <p class="showcase-value">Himalayan Serenity — 5 days</p>
+              </div>
+              <div class="showcase-item">
+                <p class="card-label">Travel vlogs</p>
+                <p class="showcase-value">Street Foods — 12 videos</p>
+              </div>
+              <div class="showcase-item">
+                <p class="card-label">Cost compare</p>
+                <p class="showcase-value">Multi-carrier analysis</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card explore-card">
+            <p class="showcase-title">Popular This Week</p>
+            <ul class="explore-list">
+              <li class="explore-item">Goa &mdash; Beaches &amp; Nightlife</li>
+              <li class="explore-item">Manali &mdash; Adventure Trails</li>
+              <li class="explore-item">Rajasthan &mdash; Heritage Loop</li>
+              <li class="explore-item">Kerala &mdash; Backwaters</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== ABOUT SECTION ===== -->
+    <section id="about" class="section">
+      <div class="container">
+        <h2 class="section-title">About PackNgo</h2>
+        <p class="section-subtitle">A unified AI-powered travel ecosystem built for modern, safety-conscious travellers.</p>
+        <div class="cards-grid cards-grid--3">
+          <div class="card">
+            <h3 class="card-title">What is PackNgo?</h3>
+            <p class="card-body">PackNgo is an integrated travel ecosystem combining a booking engine, AR/VR reviews, an AI personal travel agent, real-time safety and crowd tracking, and a social hub for solo travellers — all in one platform.</p>
+          </div>
+          <div class="card">
+            <h3 class="card-title">Vision &amp; Mission</h3>
+            <p class="card-body">To make travel safer, smarter, and more personal using machine learning, augmented reality, and community-driven intelligence. Every traveller deserves a confident, protected, and personalized journey.</p>
+          </div>
+          <div class="card">
+            <h3 class="card-title">What We Provide</h3>
+            <ul class="card-list">
+              <li>AI powered personal travel agent</li>
+              <li>Real-time crowd and safety tracking</li>
+              <li>AR and VR travel preview</li>
+              <li>Verified travel buddy network</li>
+              <li>Smart translator and cultural guide</li>
+              <li>Travel insurance and emergency mode</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SERVICES SECTION ===== -->
+    <section id="services" class="section section--alt">
+      <div class="container">
+        <h2 class="section-title">Services</h2>
+        <p class="section-subtitle">Full-stack travel services combining booking, safety, AR/VR reviews, and community features.</p>
+
+        <div class="services-layout">
+          <div class="services-list">
+
+            <div class="service-card" id="svc-flights" data-service="flights">
+              <div class="service-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="currentColor"/></svg>
+              </div>
+              <div class="service-content">
+                <h3 class="service-title">Flight + Hotel Booking</h3>
+                <p class="service-desc">Smart combos, fare predictions, multi-city routing across 100+ carriers.</p>
+                <div class="service-details" id="details-flights" hidden>
+                  <p>Compare 100+ carriers and hotels instantly. Get AI-powered fare predictions and multi-city route optimization. Set price drop alerts and receive notifications when your target price is reached.</p>
+                  <div class="service-actions">
+                    <button class="btn btn-sm" data-action="demo-flight">Demo Booking</button>
+                    <button class="btn btn-sm" data-action="price-alert">Price Alert</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="service-card" id="svc-tours" data-service="tours">
+              <div class="service-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 8l1.5 3H17l-2.5 2 1 3L12 14l-3.5 2 1-3L7 11h3.5L12 8z" fill="currentColor"/></svg>
+              </div>
+              <div class="service-content">
+                <h3 class="service-title">Tour Packages</h3>
+                <p class="service-desc">Curated packages for solo, family, adventure, and luxury travellers.</p>
+                <div class="service-details" id="details-tours" hidden>
+                  <p>Handpicked tour packages with verified guides. Solo, family, adventure, and luxury options available with transparent pricing and safety ratings for every operator.</p>
+                  <div class="service-actions">
+                    <button class="btn btn-sm" data-action="filter-tours">Filter Tours</button>
+                    <button class="btn btn-sm" data-action="connect-guide">Connect Guide</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="service-card" id="svc-compare" data-service="compare">
+              <div class="service-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <div class="service-content">
+                <h3 class="service-title">Cost Comparison</h3>
+                <p class="service-desc">AI compares carriers, hotels, and rental fees — find hidden deals instantly.</p>
+                <div class="service-details" id="details-compare" hidden>
+                  <p>AI analyzes 1000+ options across all categories. Find hidden deals and save up to 40% with smart bundling and off-peak recommendations.</p>
+                  <div class="service-actions">
+                    <button class="btn btn-sm" data-action="compare-now">Compare Now</button>
+                    <button class="btn btn-sm" data-action="best-deals">Best Deals</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="service-card" id="svc-vlogs" data-service="vlogs">
+              <div class="service-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><polygon points="23 7 16 12 23 17 23 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+              </div>
+              <div class="service-content">
+                <h3 class="service-title">Travel Vlogs</h3>
+                <p class="service-desc">Creator-driven 360-degree video reviews from verified travellers.</p>
+                <div class="service-details" id="details-vlogs" hidden>
+                  <p>Watch 360 reviews from real travellers, preview hotels with AR, and experience destinations before you book. Creator content from thousands of verified travellers worldwide.</p>
+                  <div class="service-actions">
+                    <button class="btn btn-sm" data-action="open-vlogs">Explore Vlogs</button>
+                    <button class="btn btn-sm" data-action="ar-preview">AR Preview</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <aside class="services-sidebar">
+            <div class="card">
+              <h3 class="card-title">AR/VR Travel Preview</h3>
+              <p class="card-body">Experience destinations in full 360-degree immersion before you book. Preview hotel rooms with AR and watch verified traveller tours.</p>
+              <div class="arvr-preview-box" id="arvr-preview-box">
+                <span class="arvr-label">360&deg; Preview</span>
+                <span class="arvr-badge">AR Ready</span>
+              </div>
+              <div class="card-actions">
+                <button id="btn-vr-tour" class="btn btn-sm">Start VR Tour</button>
+                <button id="btn-ar-mode" class="btn btn-sm">AR Mode</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title">Car &amp; Bike Rental</h3>
+              <p class="card-body">Choose your vehicle, select dates, and add emergency mode and insurance in one step.</p>
+              <div class="card-actions">
+                <button id="btn-open-rental" class="btn btn-sm">Book Rental</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== AI FEATURES SECTION ===== -->
+    <section id="ai-features" class="section">
+      <div class="container">
+        <h2 class="section-title">Advanced Travel Intelligence</h2>
+        <p class="section-subtitle">AI-powered features that make every trip smarter and every traveller safer.</p>
+
+        <div class="cards-grid cards-grid--2">
+
+          <!-- Safety Tracker Card -->
+          <div class="card feature-card" id="feature-safety">
+            <div class="feature-card-header">
+              <div class="feature-icon feature-icon--teal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/></svg>
+              </div>
+              <div>
+                <h3 class="feature-title">Safety &amp; Crowd Tracker</h3>
+                <p class="card-label">Real-time destination intelligence</p>
+              </div>
+            </div>
+            <div class="tracker-row">
+              <span class="tracker-label">Safety Rating</span>
+              <span class="tracker-value" id="safety-rating-value">98%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill progress-fill--safe" id="safety-bar" style="width: 98%"></div>
+            </div>
+            <div class="tracker-row">
+              <span class="tracker-label">Crowd Level</span>
+              <span class="tracker-value" id="crowd-level-value">Low</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill progress-fill--crowd" id="crowd-bar" style="width: 25%"></div>
+            </div>
+            <div class="feature-actions">
+              <button id="btn-safety-alerts" class="btn btn-sm btn-primary" data-active="false">Enable Alerts</button>
+              <button id="btn-scam-check" class="btn btn-sm">Scam Detector</button>
+            </div>
+          </div>
+
+          <!-- AI Agent Card -->
+          <div class="card feature-card" id="feature-agent">
+            <div class="feature-card-header">
+              <div class="feature-icon feature-icon--blue">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <div>
+                <h3 class="feature-title">AI Travel Agent</h3>
+                <p class="card-label">Powered by Claude AI</p>
+              </div>
+            </div>
+            <div class="agent-preview" id="agent-preview">
+              <p class="agent-hint">Ask me anything about your trip — flights, hotels, safety, deals, itineraries...</p>
+            </div>
+            <div class="feature-actions">
+              <button id="btn-open-agent-modal" class="btn btn-sm btn-primary">Open AI Agent</button>
+              <button id="btn-open-itinerary-modal" class="btn btn-sm">Build Itinerary</button>
+            </div>
+          </div>
+
+          <!-- Smart Translator Card -->
+          <div class="card feature-card" id="feature-translator">
+            <div class="feature-card-header">
+              <div class="feature-icon feature-icon--purple">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" fill="currentColor"/></svg>
+              </div>
+              <div>
+                <h3 class="feature-title">Smart Translator</h3>
+                <p class="card-label">Real-time language assistance</p>
+              </div>
+            </div>
+            <select id="source-lang" class="input-field input-sm">
+              <option value="en">English</option>
+              <option value="hi">Hindi</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="ja">Japanese</option>
+              <option value="zh">Chinese</option>
+            </select>
+            <textarea id="translate-input" class="input-field textarea-sm" placeholder="Enter text to translate..."></textarea>
+            <select id="target-lang" class="input-field input-sm">
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="ja">Japanese</option>
+              <option value="zh">Chinese</option>
+              <option value="hi">Hindi</option>
+              <option value="en">English</option>
+            </select>
+            <div id="translate-output" class="translate-output">Translation will appear here...</div>
+            <div class="feature-actions">
+              <button id="btn-translate" class="btn btn-sm btn-primary">Translate</button>
+              <button id="btn-speak" class="btn btn-sm">Speak</button>
+              <button id="btn-save-phrase" class="btn btn-sm">Save</button>
+            </div>
+          </div>
+
+          <!-- Carbon Tracker Card -->
+          <div class="card feature-card" id="feature-carbon">
+            <div class="feature-card-header">
+              <div class="feature-icon feature-icon--green">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M17 8C8 10 5.9 16.17 3.82 19.49M9.17 3.8A5.56 5.56 0 0 1 12 3c2.76 0 5 2.24 5 5 0 2.64-2.05 4.79-4.65 4.97A5 5 0 0 1 7.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <div>
+                <h3 class="feature-title">Carbon Footprint Tracker</h3>
+                <p class="card-label">Eco-friendly travel intelligence</p>
+              </div>
+            </div>
+            <p class="card-body">Calculate your trip's carbon emissions and discover eco-friendly alternatives. Compare flight versus train carbon costs and earn green travel badges.</p>
+            <div class="carbon-display">
+              <div class="carbon-item">
+                <p class="carbon-label">Flight CO&sup2;</p>
+                <p class="carbon-value" id="carbon-flight">245 kg</p>
+              </div>
+              <div class="carbon-item">
+                <p class="carbon-label">Train CO&sup2;</p>
+                <p class="carbon-value carbon-value--green" id="carbon-train">18 kg</p>
+              </div>
+            </div>
+            <div class="feature-actions">
+              <button id="btn-calculate-carbon" class="btn btn-sm btn-primary">Calculate Trip</button>
+              <button id="btn-green-options" class="btn btn-sm">Green Options</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== BOOKING SECTION ===== -->
+    <section id="booking" class="section section--alt">
+      <div class="container">
+        <h2 class="section-title">Book Your Trip</h2>
+        <p class="section-subtitle">Reserve flights, hotels, and rentals — all in one place.</p>
+
+        <div class="cards-grid cards-grid--2">
+
+          <div class="card">
+            <h3 class="card-title">Car &amp; Bike Rental</h3>
+            <p class="card-body">Choose your vehicle, pick dates, and add insurance and emergency mode.</p>
+            <div class="form-group">
+              <label for="rent-city" class="form-label">Pickup city</label>
+              <input type="text" id="rent-city" class="input-field" placeholder="e.g. Mumbai" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="rent-from" class="form-label">From</label>
+                <input type="date" id="rent-from" class="input-field" />
+              </div>
+              <div class="form-group">
+                <label for="rent-to" class="form-label">To</label>
+                <input type="date" id="rent-to" class="input-field" />
+              </div>
+            </div>
+            <div class="form-actions">
+              <button id="btn-reserve-rental" class="btn btn-primary">Reserve</button>
+              <button id="btn-estimate-rental" class="btn btn-outline">Estimate Cost</button>
+            </div>
+            <p class="form-result" id="rental-result"></p>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Group Packages</h3>
+            <p class="card-body">Family and friends packages with dynamic cost splitting.</p>
+            <div class="form-group">
+              <label for="group-size" class="form-label">Group size</label>
+              <input type="number" id="group-size" class="input-field" placeholder="Number of travellers" min="2" max="50" />
+            </div>
+            <div class="form-group">
+              <label for="group-dest" class="form-label">Destination</label>
+              <input type="text" id="group-dest" class="input-field" placeholder="e.g. Goa" list="city-list" />
+            </div>
+            <div class="form-actions">
+              <button id="btn-estimate-group" class="btn btn-primary">Estimate Split</button>
+            </div>
+            <p class="form-result" id="group-result"></p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TRAVEL BUDDY SECTION ===== -->
+    <section id="buddy" class="section">
+      <div class="container">
+        <h2 class="section-title">Travel Buddy Network</h2>
+        <p class="section-subtitle">Find verified, ID-checked travel companions who share your destination and travel style.</p>
+
+        <div class="buddy-layout">
+          <div class="buddy-feed">
+            <div class="feed-item">
+              <div class="feed-avatar" aria-hidden="true">A</div>
+              <div class="feed-content">
+                <p class="feed-name">Alex joined the Tokyo solo group</p>
+                <p class="feed-time">2 hours ago</p>
+              </div>
+              <span class="feed-badge feed-badge--new">New</span>
+            </div>
+            <div class="feed-item">
+              <div class="feed-avatar" aria-hidden="true">S</div>
+              <div class="feed-content">
+                <p class="feed-name">Sarah is looking for a Bali travel buddy</p>
+                <p class="feed-time">5 hours ago</p>
+              </div>
+              <span class="feed-badge">Active</span>
+            </div>
+            <div class="feed-item">
+              <div class="feed-avatar" aria-hidden="true">R</div>
+              <div class="feed-content">
+                <p class="feed-name">Raj posted a Manali trip plan for March</p>
+                <p class="feed-time">1 day ago</p>
+              </div>
+              <span class="feed-badge">Open</span>
+            </div>
+          </div>
+
+          <div class="buddy-actions-panel">
+            <div class="card">
+              <h3 class="card-title">Find Your Match</h3>
+              <p class="card-body">Search 50,000+ verified solo travellers by destination, dates, age, and interests. Every profile is ID-verified.</p>
+              <div class="buddy-safety-tags">
+                <span class="safety-tag">ID Verified</span>
+                <span class="safety-tag">Rating System</span>
+                <span class="safety-tag">AI Risk Detection</span>
+                <span class="safety-tag">Emergency Alert</span>
+              </div>
+              <div class="card-actions">
+                <button id="btn-find-buddies" class="btn btn-primary">Find Buddies</button>
+                <button id="btn-join-groups" class="btn btn-outline">Join Groups</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== REVIEWS SECTION ===== -->
+    <section id="reviews" class="section section--alt">
+      <div class="container">
+        <h2 class="section-title">What Travellers Say</h2>
+        <p class="section-subtitle">Real reviews from verified PackNgo users.</p>
+
+        <div class="reviews-track" id="reviews-track">
+          <div class="review-card">
+            <p class="review-text">"The AR preview saved us hours of research. We knew exactly what the hotel looked like before arriving — no surprises at all."</p>
+            <p class="review-author">— Tara S., Bangalore</p>
+            <div class="review-stars" aria-label="5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          </div>
+          <div class="review-card">
+            <p class="review-text">"The AI agent found a cheaper multi-city route that I never would have found manually. Saved me over &#8377;3,000 on a single trip."</p>
+            <p class="review-author">— Raj M., Delhi</p>
+            <div class="review-stars" aria-label="5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          </div>
+          <div class="review-card">
+            <p class="review-text">"Travel Buddy connected me with an amazing travel partner for Spiti Valley. The ID verification gave me confidence to trust a stranger."</p>
+            <p class="review-author">— Sneha K., Mumbai</p>
+            <div class="review-stars" aria-label="5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          </div>
+          <div class="review-card">
+            <p class="review-text">"The scam detection warned me about a fake taxi driver at the airport. PackNgo's safety alert literally saved my trip from disaster."</p>
+            <p class="review-author">— Priya V., Chennai</p>
+            <div class="review-stars" aria-label="5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          </div>
+          <div class="review-card">
+            <p class="review-text">"The offline maps and translator worked perfectly in Ladakh where there was zero internet. An absolute lifesaver in remote areas."</p>
+            <p class="review-author">— Arjun T., Pune</p>
+            <div class="review-stars" aria-label="5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          </div>
+        </div>
+
+        <div class="reviews-controls">
+          <button id="btn-review-prev" class="btn btn-sm" aria-label="Previous review">&#8592; Prev</button>
+          <span class="review-counter" id="review-counter">1 / 5</span>
+          <button id="btn-review-next" class="btn btn-sm" aria-label="Next review">Next &#8594;</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CONTACT SECTION ===== -->
+    <section id="contact" class="section">
+      <div class="container">
+        <h2 class="section-title">Contact Us</h2>
+        <p class="section-subtitle">Get in touch with the PackNgo team.</p>
+
+        <div class="cards-grid cards-grid--2">
+          <div class="card">
+            <h3 class="card-title">Send a Message</h3>
+            <div class="form-group">
+              <label for="contact-name" class="form-label">Your name</label>
+              <input type="text" id="contact-name" class="input-field" placeholder="Full name" autocomplete="name" />
+              <p class="form-error" id="err-contact-name" hidden></p>
+            </div>
+            <div class="form-group">
+              <label for="contact-email" class="form-label">Email address</label>
+              <input type="email" id="contact-email" class="input-field" placeholder="you@example.com" autocomplete="email" />
+              <p class="form-error" id="err-contact-email" hidden></p>
+            </div>
+            <div class="form-group">
+              <label for="contact-message" class="form-label">Message</label>
+              <textarea id="contact-message" class="input-field" rows="5" placeholder="How can we help you?"></textarea>
+              <p class="form-error" id="err-contact-message" hidden></p>
+            </div>
+            <div class="form-actions">
+              <button id="btn-send-contact" class="btn btn-primary">Send Message</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Our Offices</h3>
+            <p class="card-body">Available across major Indian cities. Reach us by phone or start a live chat.</p>
+            <ul class="office-list">
+              <li class="office-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+                <span>Mumbai — +91 98xxx xxxxx</span>
+              </li>
+              <li class="office-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+                <span>Delhi — +91 98xxx xxxxx</span>
+              </li>
+              <li class="office-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+                <span>Bangalore — +91 98xxx xxxxx</span>
+              </li>
+            </ul>
+            <div class="card-actions">
+              <button id="btn-live-chat" class="btn btn-primary">Live Chat</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer id="site-footer">
+    <div class="container footer-container">
+      <div class="footer-brand">
+        <p class="footer-logo">Pack<span class="logo-accent">Ngo</span></p>
+        <p class="footer-tagline">Travel Reimagined</p>
+      </div>
+      <p class="footer-copy">&copy; PackNgo 2025 &bull; Built with care</p>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="#" class="footer-link">Privacy</a>
+        <a href="#" class="footer-link">Terms</a>
+        <a href="#contact" class="footer-link">Contact</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- ===== TOAST ===== -->
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ===== MODALS ===== -->
+
+  <!-- Login Modal -->
+  <div class="modal" id="modal-login" aria-modal="true" aria-labelledby="modal-login-title" role="dialog" hidden>
+    <div class="modal-backdrop" data-close-modal="modal-login"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close-modal="modal-login" aria-label="Close login modal">&times;</button>
+      <h2 class="modal-title" id="modal-login-title">Login to PackNgo</h2>
+      <div class="form-group">
+        <label for="login-email" class="form-label">Email</label>
+        <input type="email" id="login-email" class="input-field" placeholder="you@example.com" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label for="login-password" class="form-label">Password</label>
+        <input type="password" id="login-password" class="input-field" placeholder="Your password" autocomplete="current-password" />
+      </div>
+      <div class="modal-actions">
+        <button id="btn-login-submit" class="btn btn-primary btn-full">Login</button>
+      </div>
+      <p class="modal-footer-text">
+        No account? <button class="link-btn" id="btn-switch-to-signup">Sign up</button> &bull;
+        <button class="link-btn" id="btn-switch-to-forgot">Forgot password?</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- Signup Modal -->
+  <div class="modal" id="modal-signup" aria-modal="true" aria-labelledby="modal-signup-title" role="dialog" hidden>
+    <div class="modal-backdrop" data-close-modal="modal-signup"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close-modal="modal-signup" aria-label="Close signup modal">&times;</button>
+      <h2 class="modal-title" id="modal-signup-title">Create Your Account</h2>
+      <div class="form-group">
+        <label for="signup-name" class="form-label">Full name</label>
+        <input type="text" id="signup-name" class="input-field" placeholder="Your name" autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label for="signup-email" class="form-label">Email</label>
+        <input type="email" id="signup-email" class="input-field" placeholder="you@example.com" autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label for="signup-password" class="form-label">Password</label>
+        <input type="password" id="signup-password" class="input-field" placeholder="Choose a password" autocomplete="new-password" />
+      </div>
+      <div class="modal-actions">
+        <button id="btn-signup-submit" class="btn btn-primary btn-full">Create Account</button>
+      </div>
+      <p class="modal-footer-text">
+        Already have an account? <button class="link-btn" id="btn-switch-to-login">Login</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal" id="modal-forgot" aria-modal="true" aria-labelledby="modal-forgot-title" role="dialog" hidden>
+    <div class="modal-backdrop" data-close-modal="modal-forgot"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close-modal="modal-forgot" aria-label="Close forgot password modal">&times;</button>
+      <h2 class="modal-title" id="modal-forgot-title">Reset Your Password</h2>
+      <p class="modal-desc">Enter your email address and we will send you a reset link.</p>
+      <div class="form-group">
+        <label for="forgot-email" class="form-label">Email address</label>
+        <input type="email" id="forgot-email" class="input-field" placeholder="you@example.com" autocomplete="email" />
+      </div>
+      <div class="modal-actions">
+        <button id="btn-forgot-submit" class="btn btn-primary btn-full">Send Reset Link</button>
+      </div>
+      <p class="modal-footer-text">
+        <button class="link-btn" id="btn-back-to-login">Back to login</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- AI Agent Modal -->
+  <div class="modal modal--wide" id="modal-agent" aria-modal="true" aria-labelledby="modal-agent-title" role="dialog" hidden>
+    <div class="modal-backdrop" data-close-modal="modal-agent"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close-modal="modal-agent" aria-label="Close AI agent">&times;</button>
+      <h2 class="modal-title" id="modal-agent-title">AI Travel Agent</h2>
+      <div class="chat-window" id="agent-chat-window">
+        <p class="chat-hint">Hi! I am your AI Travel Agent. Ask me anything about flights, hotels, safety, deals, or itineraries.</p>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="agent-input" class="input-field" placeholder="Ask about flights, hotels, safety, deals..." />
+        <button id="btn-agent-send" class="btn btn-primary">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Itinerary Modal -->
+  <div class="modal modal--wide" id="modal-itinerary" aria-modal="true" aria-labelledby="modal-itinerary-title" role="dialog" hidden>
+    <div class="modal-backdrop" data-close-modal="modal-itinerary"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close-modal="modal-itinerary" aria-label="Close itinerary builder">&times;</button>
+      <h2 class="modal-title" id="modal-itinerary-title">Build Your Itinerary</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="itin-duration" class="form-label">Duration</label>
+          <select id="itin-duration" class="input-field">
+            <option value="3">3 Days</option>
+            <option value="5">5 Days</option>
+            <option value="7" selected>7 Days</option>
+            <option value="10">10 Days</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="itin-destination" class="form-label">Destination</label>
+          <select id="itin-destination" class="input-field">
+            <option value="goa">Goa</option>
+            <option value="kerala">Kerala</option>
+            <option value="manali">Manali</option>
+            <option value="rajasthan">Rajasthan</option>
+            <option value="ladakh">Ladakh</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="itin-style" class="form-label">Travel style</label>
+          <select id="itin-style" class="input-field">
+            <option value="adventure">Adventure</option>
+            <option value="relaxation">Relaxation</option>
+            <option value="cultural">Cultural</option>
+            <option value="food">Food</option>
+          </select>
+        </div>
+      </div>
+      <button id="btn-generate-itinerary" class="btn btn-primary">Generate Itinerary</button>
+      <div id="itinerary-output" class="itinerary-output"></div>
+      <div class="modal-actions" id="itinerary-export-wrap" hidden>
+        <button id="btn-export-itinerary" class="btn btn-outline">Copy to Clipboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weather Modal -->
+  <div class="modal" id="modal-weather" aria-modal="true" aria-labelledby="modal-weather-title" role="dialog" hidden>
+    <div class="modal-backdrop" data-close-modal="modal-weather"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close-modal="modal-weather" aria-label="Close weather modal">&times;</button>
+      <h2 class="modal-title" id="modal-weather-title">Weather Information</h2>
+      <div class="form-group">
+        <label for="weather-select" class="form-label">Select city</label>
+        <select id="weather-select" class="input-field">
+          <option value="Delhi">Delhi</option>
+          <option value="Mumbai">Mumbai</option>
+          <option value="Bangalore">Bangalore</option>
+          <option value="Goa">Goa</option>
+          <option value="Manali">Manali</option>
+          <option value="Paris">Paris</option>
+          <option value="Tokyo">Tokyo</option>
+          <option value="London">London</option>
+        </select>
+      </div>
+      <div class="weather-display" id="weather-display">
+        <p class="weather-temp-big" id="weather-modal-temp">28&deg;C</p>
+        <p class="weather-desc" id="weather-modal-desc">Sunny</p>
+        <div class="weather-meta-grid">
+          <div><p class="card-label">Humidity</p><p class="weather-meta-val" id="weather-humidity">65%</p></div>
+          <div><p class="card-label">Wind</p><p class="weather-meta-val" id="weather-wind">12 km/h</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Currency Modal -->
+  <div class="modal" id="modal-currency" aria-modal="true" aria-labelledby="modal-currency-title" role="dialog" hidden>
+    <div class="modal-backdrop" data-close-modal="modal-currency"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close-modal="modal-currency" aria-label="Close currency modal">&times;</button>
+      <h2 class="modal-title" id="modal-currency-title">Currency Converter</h2>
+      <div class="form-group">
+        <label for="currency-amount" class="form-label">Amount</label>
+        <input type="number" id="currency-amount" class="input-field" placeholder="Enter amount" min="0" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="currency-from" class="form-label">From</label>
+          <select id="currency-from" class="input-field">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="INR" selected>INR</option>
+            <option value="JPY">JPY</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="currency-to" class="form-label">To</label>
+          <select id="currency-to" class="input-field">
+            <option value="INR" selected>INR</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="JPY">JPY</option>
+          </select>
+        </div>
+      </div>
+      <button id="btn-convert-currency" class="btn btn-primary">Convert</button>
+      <div class="currency-result" id="currency-result">
+        <p class="card-label">Converted amount</p>
+        <p class="currency-result-value" id="currency-converted">0.00</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications Modal -->
+  <div class="modal" id="modal-notifications" aria-modal="true" aria-labelledby="modal-notifications-title" role="dialog" hidden>
+    <div class="modal-backdrop" data-close-modal="modal-notifications"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close-modal="modal-notifications" aria-label="Close notifications">&times;</button>
+      <h2 class="modal-title" id="modal-notifications-title">Notifications</h2>
+      <ul class="notifications-list" id="notifications-list"></ul>
+    </div>
+  </div>
+
+  <!-- Travel Buddies Modal -->
+  <div class="modal modal--wide" id="modal-buddies" aria-modal="true" aria-labelledby="modal-buddies-title" role="dialog" hidden>
+    <div class="modal-backdrop" data-close-modal="modal-buddies"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close-modal="modal-buddies" aria-label="Close buddies modal">&times;</button>
+      <h2 class="modal-title" id="modal-buddies-title">Find Travel Buddies</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="buddy-destination" class="form-label">Destination</label>
+          <input type="text" id="buddy-destination" class="input-field" placeholder="e.g. Tokyo, Goa..." />
+        </div>
+        <div class="form-group">
+          <label for="buddy-interests" class="form-label">Interests</label>
+          <select id="buddy-interests" class="input-field">
+            <option value="">All Interests</option>
+            <option value="adventure">Adventure</option>
+            <option value="culture">Cultural</option>
+            <option value="food">Food</option>
+            <option value="photography">Photography</option>
+          </select>
+        </div>
+      </div>
+      <button id="btn-search-buddies" class="btn btn-primary">Search Buddies</button>
+      <div class="buddies-grid" id="buddies-grid"></div>
+    </div>
+  </div>
+
+  <!-- Community Groups Modal -->
+  <div class="modal modal--wide" id="modal-groups" aria-modal="true" aria-labelledby="modal-groups-title" role="dialog" hidden>
+    <div class="modal-backdrop" data-close-modal="modal-groups"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close-modal="modal-groups" aria-label="Close groups modal">&times;</button>
+      <h2 class="modal-title" id="modal-groups-title">Travel Communities</h2>
+      <div class="form-group">
+        <input type="text" id="group-search-input" class="input-field" placeholder="Search communities..." />
+      </div>
+      <div class="groups-grid" id="groups-grid"></div>
+    </div>
+  </div>
+
+  <!-- Chat Widget -->
+  <div id="chat-widget">
+    <button id="chat-toggle-btn" class="chat-toggle-btn" aria-label="Open chat assistant" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div id="chat-window" class="chat-window-widget" hidden>
+      <div class="chat-widget-header">
+        <span>AI Travel Assistant</span>
+        <button id="chat-close-btn" aria-label="Close chat">&times;</button>
+      </div>
+      <div id="chat-messages" class="chat-messages">
+        <p class="chat-hint">Hi! Ask me anything about your travels.</p>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" class="input-field" placeholder="Type a message..." />
+        <button id="btn-chat-send" class="btn btn-primary">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Back to Top -->
+  <button id="back-to-top" class="back-to-top-btn" aria-label="Back to top" hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 15l-6-6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <script src="script.js"></script>
+</body>
+</html>
